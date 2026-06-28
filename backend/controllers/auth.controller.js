@@ -55,11 +55,6 @@ exports.register = async (req, res) => {
         verification_token_expires: verificationTokenExpires,
       }, { transaction: t });
 
-      await sequelize.query(
-        'INSERT INTO customer (user_id) VALUES (?)',
-        { replacements: [user.user_id], transaction: t }
-      );
-
       if (role === 'guest') {
         await sequelize.query(
           'INSERT INTO guest (user_id, address) VALUES (?, ?)',

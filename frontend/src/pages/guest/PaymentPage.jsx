@@ -17,7 +17,10 @@ export default function PaymentPage() {
   const handlePay = async () => {
     setLoading(true); setMsg('');
     try {
-      await api.post('/payments/process', { booking_id: bookingId, amount: booking?.total_price, payment_method: 'credit_card' });
+      await api.post('/payments/process', {
+        booking_id: Number(bookingId),
+        payment_method: 'card',
+      });
       setMsg('Payment successful! Redirecting...');
       setTimeout(() => nav('/guest/bookings'), 2000);
     } catch (err) { setMsg(err.response?.data?.message || 'Payment failed.'); }

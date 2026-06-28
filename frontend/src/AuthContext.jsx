@@ -33,13 +33,25 @@ export function AuthProvider({ children }) {
     setUser(MOCK ? MOCK_USERS.admin : null);
   };
 
+  /**
+   * Register a new user (guest or host).
+   * The backend sends a verification email and returns { message }.
+   * It does NOT log the user in automatically — they must verify first.
+   * Returns { pendingVerification: true, email } so the caller can
+   * display a "check your email" screen.
+   */
   const register = async (data) => {
-    const res = await api.post('/auth/register', data);
-    const { token, user: u } = res.data;
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(u));
-    setUser(u);
-    return u;
+    if (MOCK) {
+      // Mock mode: simulate immediate login as before
+      const res = await api.post('/auth/register', data);
+      const { token, user: u } = res.data;
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(u));
+      setUser(u);
+      return { pendingVerification: false, user: u };
+    }
+    await api.post('/auth/register', data);
+    return { pendingVerification: true, email: data.email };
   };
 
   // Mock-only: switch role without backend

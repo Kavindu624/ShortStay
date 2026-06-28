@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { getImageUrl } from '../../utils';
 import { MapPin, Star, Search, Filter } from 'lucide-react';
 
 export default function BrowseListings() {
@@ -60,9 +61,13 @@ export default function BrowseListings() {
               onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = ''; }}
               onClick={() => nav(`/guest/property/${p.property_id}`)}>
               <div style={{ height: 170, background: '#e5e7eb', position: 'relative' }}>
-                {p.image
-                  ? <img src={`http://localhost:5000/uploads/${p.image}`} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a8a22,#1e3a8a44)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>🏠</div>}
+                {(() => {
+                  const primary = p.images?.find(i => i.is_primary) || p.images?.[0];
+                  const src     = primary ? getImageUrl(primary.image_url) : getImageUrl(p.image);
+                  return src
+                    ? <img src={src} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a8a22,#1e3a8a44)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>🏠</div>;
+                })()}
                 {p.verification_badge === 1 && (
                   <span className="badge badge-success" style={{ position: 'absolute', top: 10, right: 10 }}>✓ Verified</span>
                 )}

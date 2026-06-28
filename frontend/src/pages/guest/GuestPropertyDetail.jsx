@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { getImageUrl } from '../../utils';
 import { MapPin, Star, Users, ArrowLeft, Calendar } from 'lucide-react';
 
 export default function GuestPropertyDetail() {
@@ -44,7 +45,7 @@ export default function GuestPropertyDetail() {
         <div>
           <div style={{ borderRadius: 12, overflow: 'hidden', height: 320, background: '#e5e7eb', marginBottom: 24 }}>
             {property.image
-              ? <img src={`http://localhost:5000/uploads/${property.image}`} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <img src={getImageUrl(property.image)} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a8a22,#1e3a8a44)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60 }}>🏠</div>}
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 6 }}>{property.title}</h1>

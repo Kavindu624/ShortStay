@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import PublicNav from '../../components/PublicNav';
 import Footer from '../../components/Footer';
 import api from '../../api';
+import { getImageUrl } from '../../utils';
 import { MapPin, Star, Users, ArrowLeft, Calendar } from 'lucide-react';
 
 export default function PropertyDetail() {
@@ -34,7 +35,7 @@ export default function PropertyDetail() {
         {/* Image */}
         <div style={{ borderRadius: 16, overflow: 'hidden', height: 360, background: '#e5e7eb', marginBottom: 32 }}>
           {property.image
-            ? <img src={`http://localhost:5000/uploads/${property.image}`} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <img src={getImageUrl(property.image)} alt={property.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a8a22,#1e3a8a55)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60 }}>🏠</div>}
         </div>
 

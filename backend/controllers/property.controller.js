@@ -523,15 +523,53 @@ exports.uploadImages = async (req, res) => {
       });
     }
 
-    // Update main image column with primary image
+    // Update main image column with the filename of the first (primary) image
     if (existingImages === 0) {
-      await property.update({ image: savedImages[0].image_url });
+      await property.update({ image: req.files[0].filename });
     }
 
     res.status(200).json({
       message: `${req.files.length} image(s) uploaded successfully`,
       images:  savedImages,
     });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ─────────────────────────────────────────
+// DELETE A SPECIFIC IMAGE (Host only)
+// ─────────────────────────────────────────
+exports.deleteImage = async (req, res) => {
+  try {
+    const { id, image_id } = req.params;
+
+    const property = await Property.findByPk(id);
+    if (!property) return res.status(404).json({ message: 'Property not found' });
+    if (property.host_id !== req.user.user_id) return res.status(403).json({ message: 'Not authorized' });
+
+    const image = await PropertyImage.findOne({ where: { image_id, property_id: id } });
+    if (!image) return res.status(404).json({ message: 'Image not found' });
+
+    // Delete file from disk
+    const filePath = path.join(__dirname, '../uploads/properties', image.image_url);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    const wasPrimary = image.is_primary;
+    await image.destroy();
+
+    // If deleted image was primary, promote the next available image
+    if (wasPrimary) {
+      const next = await PropertyImage.findOne({ where: { property_id: id }, order: [['image_id', 'ASC']] });
+      if (next) {
+        await next.update({ is_primary: true });
+        await property.update({ image: next.image_url });
+      } else {
+        await property.update({ image: null });
+      }
+    }
+
+    res.status(200).json({ message: 'Image deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -567,9 +605,7 @@ exports.setPrimaryImage = async (req, res) => {
 
     // Get updated image url
     const image = await PropertyImage.findByPk(image_id);
-    await property.update({ 
-      image: `http://localhost:5000/uploads/properties/${image.image_url}` 
-    });
+    await property.update({ image: image.image_url });
 
     res.status(200).json({ message: 'Primary image updated' });
   } catch (err) {

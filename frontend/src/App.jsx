@@ -8,10 +8,10 @@ import Contact from './pages/public/Contact';
 import PropertyDetail from './pages/public/PropertyDetail';
 import AccessPortal from './pages/public/AccessPortal';
 
-// Auth
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import VerifyEmail from './pages/auth/VerifyEmail';
 
 // Guest
 import GuestDashboard from './pages/guest/GuestDashboard';
@@ -83,6 +83,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* Portal redirect */}
           <Route path="/portal" element={<RoleRedirect />} />

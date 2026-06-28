@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { getImageUrl } from '../../utils';
 import { Plus, Edit2, Calendar, Trash2, Star, MapPin } from 'lucide-react';
 
 export default function HostListings() {
@@ -40,10 +41,19 @@ export default function HostListings() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {properties.map(p => (
               <div key={p.property_id} className="card" style={{ display: 'grid', gridTemplateColumns: '160px 1fr auto', gap: 20, alignItems: 'center' }}>
-                <div style={{ borderRadius: 10, overflow: 'hidden', height: 110, background: '#e5e7eb' }}>
-                  {p.image
-                    ? <img src={`http://localhost:5000/uploads/${p.image}`} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a8a22,#1e3a8a44)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>🏠</div>}
+                <div style={{ borderRadius: 10, overflow: 'hidden', height: 110, background: '#e5e7eb', position: 'relative' }}>
+                  {(() => {
+                    const primary = p.images?.find(i => i.is_primary) || p.images?.[0];
+                    const src     = primary ? getImageUrl(primary.image_url) : getImageUrl(p.image);
+                    return src
+                      ? <img src={src} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a8a22,#1e3a8a44)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>🏠</div>;
+                  })()}
+                  {p.images?.length > 0 && (
+                    <div style={{ position: 'absolute', bottom: 4, right: 4, background: 'rgba(0,0,0,0.6)', color: 'white', borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 600 }}>
+                      {p.images.length} photo{p.images.length !== 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { getImageUrl } from '../../utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, Home, Calendar, Star, Plus, MapPin } from 'lucide-react';
 
@@ -76,7 +77,7 @@ export default function HostDashboard() {
             {properties.map(p => (
               <div key={p.property_id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
                 <div style={{ height: 130, background: '#e5e7eb' }}>
-                  {p.image ? <img src={`http://localhost:5000/uploads/${p.image}`} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {p.image ? <img src={getImageUrl(p.image)} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#1e3a8a22,#1e3a8a44)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>🏠</div>}
                 </div>
                 <div style={{ padding: 12 }}>

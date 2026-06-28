@@ -23,10 +23,10 @@ const globalRateLimit = rateLimit({
 });
 
 // ─── Auth Rate Limiter ────────────────────────────────────────────────────────
-// Stricter: 10 attempts per 15 minutes for login/register endpoints
+// TEMPORARILY DISABLED for development — set max back to 10 for production
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
