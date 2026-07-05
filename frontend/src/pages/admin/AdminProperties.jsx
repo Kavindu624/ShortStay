@@ -84,9 +84,9 @@ export default function AdminProperties() {
       {/* Assign modal */}
       {assignModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: 12, padding: 28, width: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%' }}>
             <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Assign Inspector</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>Property #{assignModal}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>{properties.find(p => p.property_id === assignModal)?.title || `Property #${assignModal}`}</p>
             {assignMsg && <div className={`alert ${assignMsg.includes('successfully') ? 'alert-success' : 'alert-error'}`}>{assignMsg}</div>}
             <div className="form-group">
               <label className="form-label">Select Field Inspector</label>
@@ -106,9 +106,9 @@ export default function AdminProperties() {
 
       {/* Reject reason modal */}
       {rejectModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: 12, padding: 28, width: 400, boxShadow: '0 8px 32px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 16, color: '#dc2626' }}>Reject Property #{rejectModal}</h3>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%' }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 16, color: '#dc2626' }}>Reject {properties.find(p => p.property_id === rejectModal)?.title || `Property #${rejectModal}`}</h3>
             <div className="form-group">
               <label className="form-label">Reason (optional)</label>
               <textarea className="form-input" rows={3} placeholder="e.g. Images do not match description" value={rejectReason} onChange={e => setRejectReason(e.target.value)} style={{ resize: 'vertical' }} />

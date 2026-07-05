@@ -154,14 +154,16 @@ export default function GuestReviews() {
           {myReviews.map(r => (
             <div key={r.review_id} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                    {r.property?.title || `Property #${r.property_id}`}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: 2 }}>
+                    {r.booking?.property?.title || r.property?.title || `Property #${r.property_id}`}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>
+                    {new Date(r.review_date).toLocaleDateString()}
                   </div>
                   <StarRating value={r.rating} readonly />
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{r.review_date?.substring(0, 10)}</span>
                   <button className="btn-outline btn-sm" onClick={() => startEdit(r)} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Pencil size={11} /> Edit
                   </button>

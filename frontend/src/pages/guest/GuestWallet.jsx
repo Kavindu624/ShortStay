@@ -29,6 +29,20 @@ export default function GuestWallet() {
 
   const totalSpent = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
 
+  const downloadStatement = () => {
+    let csv = 'Transaction ID,Date,Amount,Status\n';
+    payments.forEach(p => {
+      csv += `${p.payment_id},${new Date(p.payment_date).toLocaleDateString()},"Rs. ${Number(p.amount).toLocaleString()}",${p.payment_status}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'wallet_statement.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <DashboardLayout>
       {/* Receipt Modal */}
@@ -64,7 +78,7 @@ export default function GuestWallet() {
 
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div><div className="page-title">Wallet</div><div className="page-subtitle">Manage your balance and transactions</div></div>
-        <button className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Download size={14} /> Download Statement</button>
+        <button onClick={downloadStatement} className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Download size={14} /> Download Statement</button>
       </div>
 
       {/* Balance banner */}

@@ -3,7 +3,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { Calendar } from 'lucide-react';
 
-const statusBadge = { confirmed: 'badge-success', pending: 'badge-warning', cancelled: 'badge-error' };
+const statusBadge = { confirmed: 'badge-success', approved: 'badge-info', pending: 'badge-warning', cancelled: 'badge-error' };
 
 export default function HostBookings() {
   const [bookings, setBookings] = useState([]);
@@ -36,6 +36,7 @@ export default function HostBookings() {
   const stats = {
     total: bookings.length,
     confirmed: bookings.filter(b => b.status === 'confirmed').length,
+    approved: bookings.filter(b => b.status === 'approved').length,
     pending: bookings.filter(b => b.status === 'pending').length,
     completed: bookings.filter(b => b.status === 'completed').length
   };
@@ -61,12 +62,12 @@ export default function HostBookings() {
             <div style={{ fontSize: 24, fontWeight: 700, color: '#10b981' }}>{stats.confirmed}</div>
           </div>
           <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Pending</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#f59e0b' }}>{stats.pending}</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Approved (Unpaid)</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#3b82f6' }}>{stats.approved}</div>
           </div>
           <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Completed</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#3b82f6' }}>{stats.completed}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#6366f1' }}>{stats.completed}</div>
           </div>
         </div>
       )}

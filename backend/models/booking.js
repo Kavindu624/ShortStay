@@ -9,7 +9,7 @@ const Booking = sequelize.define('booking', {
   checkout_date: { type: DataTypes.DATEONLY },
   total_price:   { type: DataTypes.DECIMAL(10,2) },
   status:        {
-    type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'rejected', 'expired'),
+    type: DataTypes.ENUM('pending', 'approved', 'confirmed', 'completed', 'cancelled', 'rejected', 'expired'),
     defaultValue: 'pending',
   },
   // Booking expiry — auto-cancel if host doesn't act within 24 h

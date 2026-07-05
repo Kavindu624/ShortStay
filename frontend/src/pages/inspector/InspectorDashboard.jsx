@@ -95,7 +95,9 @@ export default function InspectorDashboard() {
               ) : inspections.map(i => (
                 <div key={i.inspection_id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontWeight: 600 }}>Property #{i.property_id}</span>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontWeight: 600 }}>{i.Property?.title || i.property?.title || `Property #${i.property_id}`}</span>
+                    </div>
                     <span className={`badge ${statusBadge[i.status] || statusBadge[i.result] || 'badge-gray'}`}>{i.result || i.status}</span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>

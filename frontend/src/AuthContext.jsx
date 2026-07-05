@@ -26,6 +26,20 @@ export function AuthProvider({ children }) {
     return u;
   };
 
+  const loginWithToken = async (token) => {
+    localStorage.setItem('token', token);
+    try {
+      const res = await api.get('/profile');
+      const u = res.data;
+      localStorage.setItem('user', JSON.stringify(u));
+      setUser(u);
+      return u;
+    } catch (error) {
+      localStorage.removeItem('token');
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try { await api.post('/auth/logout'); } catch {}
     localStorage.removeItem('token');
@@ -71,7 +85,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, updateUser, loading, switchMockRole, MOCK }}>
+    <AuthContext.Provider value={{ user, login, loginWithToken, logout, register, updateUser, loading, switchMockRole, MOCK }}>
       {children}
     </AuthContext.Provider>
   );

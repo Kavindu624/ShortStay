@@ -1,5 +1,6 @@
 const express = require('express');
 const router  = express.Router();
+const passport = require('passport');
 const authController = require('../controllers/auth.controller');
 const auth    = require('../middleware/auth.middleware');
 const role    = require('../middleware/role.middleware');
@@ -11,6 +12,22 @@ const {
   updateProfileValidator,
   createStaffValidator,
 } = require('../middleware/validators');
+const jwt = require('jsonwebtoken');
+
+// ── Google OAuth Routes ───────────────────
+router.get('/google', (req, res, next) => {
+  const role = req.query.role || 'guest';
+  passport.authenticate('google', { scope: ['profile', 'email'], state: role })(req, res, next);
+});
+
+router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_auth_failed` }), (req, res) => {
+  const token = jwt.sign(
+    { user_id: req.user.user_id, email: req.user.email, role: req.user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+  res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
+});
 
 // ── Public routes ──────────────────────────
 

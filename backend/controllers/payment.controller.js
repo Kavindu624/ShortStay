@@ -51,8 +51,8 @@ exports.processPayment = async (req, res) => {
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     if (booking.guest_id !== req.user.user_id)
       return res.status(403).json({ message: 'Not authorized' });
-    if (booking.status !== 'confirmed')
-      return res.status(400).json({ message: 'Payment can only be made for confirmed bookings' });
+    if (booking.status !== 'approved')
+      return res.status(400).json({ message: 'Payment can only be made for approved bookings' });
 
     const existingPayment = await Payment.findOne({ where: { booking_id } });
     if (existingPayment)
@@ -92,8 +92,8 @@ exports.createPaymentIntent = async (req, res) => {
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     if (booking.guest_id !== req.user.user_id)
       return res.status(403).json({ message: 'Not authorized' });
-    if (booking.status !== 'confirmed')
-      return res.status(400).json({ message: 'Payment can only be made for confirmed bookings' });
+    if (booking.status !== 'approved')
+      return res.status(400).json({ message: 'Payment can only be made for approved bookings' });
 
     const existing = await Payment.findOne({
       where: { booking_id, payment_status: 'completed' },
@@ -601,6 +601,41 @@ exports.generateReport = async (req, res) => {
 async function _postPaymentSuccess(payment, booking, guestUserId, req) {
   try {
     const guest = await User.findByPk(guestUserId);
+
+    // Auto-generate payout for the host if not already exists
+    if (booking && booking.property) {
+      const { Payout } = require('../models/index');
+      const { getPlatformSettings } = require('../utils/settings');
+      const settings = await getPlatformSettings();
+      
+      const existingPayout = await Payout.findOne({ where: { booking_id: booking.booking_id } });
+      if (!existingPayout) {
+        const grossAmount = parseFloat(payment.amount);
+        const commissionRate = parseFloat(settings.commissionRate || '10');
+        let commissionAmount = parseFloat((grossAmount * commissionRate / 100).toFixed(2));
+        if (commissionAmount < settings.minCommission) {
+          commissionAmount = settings.minCommission;
+        }
+        const payoutAmount = parseFloat((grossAmount - commissionAmount).toFixed(2));
+
+        await Payout.create({
+          host_id: booking.property.host_id,
+          payment_id: payment.payment_id,
+          booking_id: booking.booking_id,
+          gross_amount: grossAmount,
+          commission_rate: commissionRate,
+          commission_amount: commissionAmount,
+          payout_amount: payoutAmount,
+          currency: payment.currency || 'USD',
+          status: 'pending',
+        });
+      }
+    }
+
+    // If the booking was 'approved' by the host, paying for it confirms it.
+    if (booking && booking.status === 'approved') {
+      await booking.update({ status: 'confirmed' });
+    }
 
     // Email
     if (guest) {

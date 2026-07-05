@@ -241,7 +241,7 @@ exports.approveBooking = async (req, res) => {
       return res.status(400).json({ message: 'Booking has already expired' });
     }
 
-    await booking.update({ status: 'confirmed' });
+    await booking.update({ status: 'approved' });
 
     // Update guest membership
     const newMembership = await updateMembership(booking.guest_id);

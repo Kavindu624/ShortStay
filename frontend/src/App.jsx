@@ -8,6 +8,7 @@ import About from './pages/public/About';
 import Contact from './pages/public/Contact';
 import PropertyDetail from './pages/public/PropertyDetail';
 import AccessPortal from './pages/public/AccessPortal';
+import Terms from './pages/public/Terms';
 
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -114,6 +115,7 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           <Route path="/access-portal" element={<AccessPortal />} />
+          <Route path="/terms" element={<Terms />} />
 
           {/* Auth */}
           <Route path="/login" element={<Login />} />

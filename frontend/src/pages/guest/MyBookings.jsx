@@ -124,7 +124,7 @@ export default function MyBookings() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: (b.status === 'confirmed' || b.status === 'completed') ? '#10b981' : '#cbd5e1' }}></div>
                   <div style={{ fontSize: 12, color: (b.status === 'confirmed' || b.status === 'completed') ? 'var(--text-main)' : 'var(--text-muted)' }}>
-                    Payment {b.payment_status === 'paid' ? 'confirmed' : 'pending'} 
+                    Payment {b.payment_status === 'paid' ? 'confirmed' : (b.status === 'approved' ? 'pending (Pay Now)' : 'pending')} 
                     {(b.status === 'confirmed' || b.status === 'completed') && <span style={{ color: 'var(--text-muted)' }}> • {b.created_at?.substring(0, 10) || 'Just now'}</span>}
                   </div>
                 </div>
@@ -141,13 +141,13 @@ export default function MyBookings() {
                   View Details
                 </button>
                 
-                {(b.status === 'pending' || b.status === 'confirmed') && (
+                {(b.status === 'pending' || b.status === 'approved' || b.status === 'confirmed') && (
                   <button onClick={() => cancel(b.booking_id)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#ef4444', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginLeft: 'auto' }}>
                     <XCircle size={14} /> Cancel Booking
                   </button>
                 )}
 
-                {(b.status === 'pending' && b.payment_status !== 'paid') && (
+                {(b.status === 'approved' && b.payment_status !== 'paid') && (
                   <button onClick={() => nav(`/guest/pay/${b.booking_id}`)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#10b981', border: 'none', marginLeft: 'auto' }}>
                     <CreditCard size={14} /> Pay Now
                   </button>

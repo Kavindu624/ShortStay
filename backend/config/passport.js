@@ -8,8 +8,9 @@ passport.use(new GoogleStrategy({
     clientID:     process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL:  process.env.GOOGLE_CALLBACK_URL,
+    passReqToCallback: true
   },
-  async (accessToken, refreshToken, profile, done) => {
+  async (req, accessToken, refreshToken, profile, done) => {
     try {
       const email   = profile.emails[0].value;
       const googleId = profile.id;
@@ -32,6 +33,9 @@ passport.use(new GoogleStrategy({
         return done(null, user);
       }
 
+      // Get role from state, default to guest
+      const requestedRole = req.query.state === 'host' ? 'host' : 'guest';
+
       // Create new user
       const result = await sequelize.transaction(async (t) => {
         const newUser = await User.create({
@@ -39,21 +43,23 @@ passport.use(new GoogleStrategy({
           email:         email,
           phone:         null,
           password:      null,
-          role:          'guest',
+          role:          requestedRole,
           google_id:     googleId,
           auth_provider: 'google',
           is_verified:   true, // Google has already verified this email
         }, { transaction: t });
 
-        await sequelize.query(
-          'INSERT INTO customer (user_id) VALUES (?)',
-          { replacements: [newUser.user_id], transaction: t }
-        );
-
-        await sequelize.query(
-          'INSERT INTO guest (user_id, address) VALUES (?, ?)',
-          { replacements: [newUser.user_id, null], transaction: t }
-        );
+        if (requestedRole === 'guest') {
+          await sequelize.query(
+            'INSERT INTO guest (user_id, address) VALUES (?, ?)',
+            { replacements: [newUser.user_id, null], transaction: t }
+          );
+        } else if (requestedRole === 'host') {
+          await sequelize.query(
+            'INSERT INTO host (user_id, bank_details) VALUES (?, ?)',
+            { replacements: [newUser.user_id, null], transaction: t }
+          );
+        }
 
         return newUser;
       });
