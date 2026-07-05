@@ -1,8 +1,8 @@
 const express  = require('express');
 const http     = require('http');
 const cors     = require('cors');
-const passport = require('./config/passport');
 require('dotenv').config();
+const passport = require('./config/passport');
 const sequelize = require('./config/db');
 require('./models/index');
 const { startBookingExpiryCron } = require('./utils/bookingExpiryCron');

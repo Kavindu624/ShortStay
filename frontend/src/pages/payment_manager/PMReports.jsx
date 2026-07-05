@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import { Download, RefreshCw, Calendar } from 'lucide-react';
+import { exportToCSV } from '../../utils';
 
 const COLORS = ['#1e3a8a', '#10b981', '#f59e0b', '#6b7280', '#ef4444'];
 
@@ -222,8 +223,8 @@ export default function PMReports() {
       )}
 
       <div className="grid-2">
-        <button className="btn-outline" style={{ justifyContent: 'center', padding: 14, display: 'flex', gap: 8 }}><Download size={14} /> Export as PDF</button>
-        <button className="btn-outline" style={{ justifyContent: 'center', padding: 14, display: 'flex', gap: 8 }}><Download size={14} /> Export as CSV</button>
+        <button className="btn-outline" onClick={() => window.print()} style={{ justifyContent: 'center', padding: 14, display: 'flex', gap: 8 }}><Download size={14} /> Export as PDF</button>
+        <button className="btn-outline" onClick={() => exportToCSV(payouts, 'pm_host_payouts.csv')} style={{ justifyContent: 'center', padding: 14, display: 'flex', gap: 8 }}><Download size={14} /> Export as CSV</button>
       </div>
     </DashboardLayout>
   );

@@ -176,7 +176,7 @@ export default function BrowseListings() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                       <Star size={12} color="#f59e0b" fill="#f59e0b" />
                       <span style={{ fontWeight: 600, fontSize: 12 }}>{p.overall_score || '—'}</span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 2 }}>({p.Reviews?.length || 0})</span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: 11, marginLeft: 2 }}>({p.Reviews?.length || p.reviews?.length || 0})</span>
                     </div>
                     {p.max_guests && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: 'var(--text-muted)', fontSize: 11 }}>

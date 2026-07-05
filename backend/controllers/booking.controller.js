@@ -1,5 +1,6 @@
 const { Booking, Property, User, PropertyAvailability, Notification } = require('../models/index');
 const { Op } = require('sequelize');
+const { getPlatformSettings } = require('../utils/settings');
 const sendEmail = require('../utils/sendEmail');
 const updateMembership = require('../utils/membership');
 const { markAsBooked, markAsAvailable } = require('./availability.controller');
@@ -81,11 +82,23 @@ exports.makeBooking = async (req, res) => {
     const checkin  = new Date(checkin_date);
     const checkout = new Date(checkout_date);
     const nights   = Math.ceil((checkout - checkin) / (1000 * 60 * 60 * 24));
+    
+    // Fetch global settings
+    const settings = await getPlatformSettings();
+
     if (nights <= 0) {
       return res.status(400).json({ message: 'Invalid dates: checkout must be after checkin' });
     }
     if (checkin < new Date()) {
       return res.status(400).json({ message: 'Check-in date cannot be in the past' });
+    }
+    if (nights < settings.minBookingDays) {
+      return res.status(400).json({ message: `Minimum booking duration is ${settings.minBookingDays} nights` });
+    }
+    
+    const daysInAdvance = Math.ceil((checkin - new Date()) / (1000 * 60 * 60 * 24));
+    if (daysInAdvance > settings.maxAdvanceBooking) {
+      return res.status(400).json({ message: `Cannot book more than ${settings.maxAdvanceBooking} days in advance` });
     }
 
     // 3. Check availability BEFORE creating booking
@@ -158,6 +171,16 @@ exports.makeBooking = async (req, res) => {
         'New Booking Request - ShortStay',
         hostNewBookingEmail(host.name, guest.name, property, booking)
       );
+      
+      // 8. Notify Admin if configured
+      if (settings.notifNewBooking && settings.notifEmail) {
+        await sendEmail(
+          settings.notifEmail,
+          'Admin Alert: New Booking Created',
+          `<p>A new booking (ID: ${booking.booking_id}) has been created by ${guest.name} for property "${property.title}".</p>`
+        );
+      }
+
       await notify(
         host.user_id,
         'booking_created',

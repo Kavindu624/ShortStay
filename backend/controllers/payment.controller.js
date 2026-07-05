@@ -26,6 +26,7 @@ const {
   bookingCancelledEmail,
 } = require('../utils/emailTemplates');
 const logActivity  = require('../utils/activityLogger');
+const { getPlatformSettings } = require('../utils/settings');
 const notify       = require('../utils/notify');
 
 // ─── Stripe (lazy-load so server starts even without STRIPE_SECRET_KEY) ───────
@@ -233,6 +234,16 @@ exports.stripeWebhook = async (req, res) => {
             `Your payment of $${payment.amount} could not be processed. Please retry or use a different card.`,
             'payment_failed',
             payment.payment_id
+          );
+        }
+        
+        // Notify Admin if configured
+        const settings = await getPlatformSettings();
+        if (settings.notifPayment && settings.notifEmail) {
+          await sendEmail(
+            settings.notifEmail,
+            'Admin Alert: Payment Failed',
+            `<p>A payment (ID: ${payment.payment_id}) for $${payment.amount} has failed.</p>`
           );
         }
       }

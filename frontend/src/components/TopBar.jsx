@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Search, User, X, Check, CheckCheck } from 'lucide-react';
+import { Bell, User, X, Check, CheckCheck } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
 import { getProfileUrl } from '../utils';
@@ -78,11 +78,7 @@ export default function TopBar() {
       background: 'white', borderBottom: '1px solid var(--border)', zIndex: 99,
       display: 'flex', alignItems: 'center', padding: '0 24px', gap: 16
     }}>
-      <div style={{ flex: 1, position: 'relative' }}>
-        <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
-        <input className="form-input" placeholder="Search properties, bookings, users..."
-          style={{ paddingLeft: 36, background: '#f5f6fa', border: '1px solid var(--border)', maxWidth: 400, borderRadius: 8 }} />
-      </div>
+      <div style={{ flex: 1 }}></div>
 
       {/* Notification Bell */}
       <div ref={panelRef} style={{ position: 'relative' }}>

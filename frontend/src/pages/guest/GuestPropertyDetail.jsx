@@ -18,14 +18,16 @@ export default function GuestPropertyDetail() {
   const [msg, setMsg] = useState('');
   const [activeImage, setActiveImage] = useState(null);
 
+  const [settings, setSettings] = useState(null);
+
   useEffect(() => {
     api.get(`/properties/${id}`).then(r => {
       setProperty(r.data);
       const imgs = r.data.images && r.data.images.length > 0 ? r.data.images : (r.data.image ? [{ image_url: r.data.image }] : []);
       setActiveImage(imgs.find(i => i.is_primary) || imgs[0] || null);
     }).catch(() => {});
-    // Backend returns { total_reviews, average_rating, reviews: [...] }
     api.get(`/reviews/property/${id}`).then(r => setReviews(r.data?.reviews || r.data || [])).catch(() => {});
+    api.get('/settings').then(r => setSettings(r.data)).catch(() => {});
   }, [id]);
 
   if (!property) return <DashboardLayout><div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '60px 0' }}>Loading...</div></DashboardLayout>;
@@ -42,6 +44,19 @@ export default function GuestPropertyDetail() {
 
   const handleBook = async () => {
     if (!checkin || !checkout || nights <= 0) { setMsg('Please select valid dates.'); return; }
+    
+    if (settings) {
+      if (nights < parseInt(settings.minBookingDays || '1', 10)) {
+        setMsg(`Minimum booking duration is ${settings.minBookingDays} nights.`);
+        return;
+      }
+      const daysInAdvance = Math.ceil((new Date(checkin) - new Date()) / 86400000);
+      if (daysInAdvance > parseInt(settings.maxAdvanceBooking || '365', 10)) {
+        setMsg(`Cannot book more than ${settings.maxAdvanceBooking} days in advance.`);
+        return;
+      }
+    }
+
     setBooking(true); setMsg('');
     try {
       const res = await api.post('/bookings', { property_id: id, checkin_date: checkin, checkout_date: checkout });

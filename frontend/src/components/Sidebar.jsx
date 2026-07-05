@@ -20,7 +20,7 @@ const menuByRole = {
     { label: 'My Listings', icon: Home, path: '/host/listings' },
     { label: 'Bookings', icon: Calendar, path: '/host/bookings' },
     { label: 'Availability', icon: Map, path: '/host/calendar' },
-    { label: 'Payouts', icon: DollarSign, path: '/host/payouts' },
+    { label: 'Earnings', icon: DollarSign, path: '/host/payouts' },
     { label: 'Reviews', icon: Star, path: '/host/reviews' },
     { label: 'Settings', icon: Settings, path: '/host/settings' },
   ],

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { Download, MessageSquare, XCircle, CreditCard, Star, FileText } from 'lucide-react';
+import { exportToCSV } from '../../utils';
 
 const statusBadge = { 
   confirmed: 'badge-success', 
@@ -45,8 +46,8 @@ export default function MyBookings() {
           <div className="page-title">My Bookings</div>
           <div className="page-subtitle">View and manage your reservations</div>
         </div>
-        <button className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontWeight: 600 }}>
-          <Download size={14} /> Export
+        <button className="btn-outline" onClick={() => exportToCSV(bookings, 'my_bookings.csv')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontWeight: 600 }}>
+          <Download size={14} /> Export CSV
         </button>
       </div>
 

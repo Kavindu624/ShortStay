@@ -11,6 +11,8 @@ const { Op }    = require('sequelize');
 const path      = require('path');
 const fs        = require('fs');
 const sequelize = require('../config/db');
+const { getPlatformSettings } = require('../utils/settings');
+const sendEmail = require('../utils/sendEmail');
 const logActivity = require('../utils/activityLogger');
 
 // ─────────────────────────────────────────
@@ -98,6 +100,15 @@ exports.createProperty = async (req, res) => {
       req,
       details:   { title, address, property_type },
     });
+
+    const settings = await getPlatformSettings();
+    if (settings.notifVerification && settings.notifEmail) {
+      await sendEmail(
+        settings.notifEmail,
+        'Admin Alert: Property Verification Required',
+        `<p>A new property "${title}" has been created by host ID ${req.user.user_id} and requires admin verification.</p>`
+      );
+    }
 
     res.status(201).json({ 
       message: 'Property created successfully. Waiting for admin approval.',

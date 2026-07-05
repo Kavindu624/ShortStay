@@ -19,6 +19,7 @@ const { Op }       = require('sequelize');
 const notify       = require('../utils/notify');
 const sendEmail    = require('../utils/sendEmail');
 const logActivity  = require('../utils/activityLogger');
+const { getPlatformSettings } = require('../utils/settings');
 
 // Platform commission rate (default 10%)
 const COMMISSION_RATE = parseFloat(process.env.PLATFORM_COMMISSION_RATE || '10');
@@ -31,7 +32,8 @@ const COMMISSION_RATE = parseFloat(process.env.PLATFORM_COMMISSION_RATE || '10')
 exports.generatePayout = async (req, res) => {
   try {
     const { booking_id } = req.params;
-    const commissionRate  = parseFloat(req.body.commission_rate || COMMISSION_RATE);
+    const settings = await getPlatformSettings();
+    const commissionRate  = parseFloat(req.body.commission_rate || settings.commissionRate);
 
     // Find completed payment for this booking
     const payment = await Payment.findOne({
@@ -53,7 +55,13 @@ exports.generatePayout = async (req, res) => {
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     const grossAmount      = parseFloat(payment.amount);
-    const commissionAmount = parseFloat((grossAmount * commissionRate / 100).toFixed(2));
+    let commissionAmount = parseFloat((grossAmount * commissionRate / 100).toFixed(2));
+    
+    // Apply minimum commission floor
+    if (commissionAmount < settings.minCommission) {
+      commissionAmount = settings.minCommission;
+    }
+    
     const payoutAmount     = parseFloat((grossAmount - commissionAmount).toFixed(2));
     const hostId           = booking.property?.host_id;
 

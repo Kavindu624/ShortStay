@@ -13,7 +13,7 @@ export default function GuestSettings() {
   const [msg2, setMsg2] = useState('');
   const [msg3, setMsg3] = useState('');
   const [msg4, setMsg4] = useState('');
-  const [notifPrefs, setNotifPrefs] = useState({ email_notifications: true, booking_updates: true, payment_updates: true });
+  const [notifPrefs, setNotifPrefs] = useState({ email_system: true, email_booking: true, email_payment: true });
   const [uploading, setUploading] = useState(false);
   const [avatar, setAvatar] = useState(user?.profile_picture || null);
   const [activeTab, setActiveTab] = useState('profile');
@@ -36,7 +36,7 @@ export default function GuestSettings() {
     }).catch(() => {});
 
     api.get('/notifications/preferences')
-      .then(r => setNotifPrefs(r.data))
+      .then(r => setNotifPrefs(r.data.preferences || { email_system: true, email_booking: true, email_payment: true }))
       .catch(() => {});
   }, []);
 
@@ -61,6 +61,7 @@ export default function GuestSettings() {
       });
 
       setMsg1('Profile updated successfully!');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) { setMsg1(err.response?.data?.message || 'Failed to update profile'); }
   };
 
@@ -70,6 +71,7 @@ export default function GuestSettings() {
     try {
       await api.put('/auth/change-password', { current_password: pwd.current_password, new_password: pwd.new_password });
       setMsg2('Password changed successfully!');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setPwd({ current_password: '', new_password: '', confirm: '' });
     } catch (err) { setMsg2(err.response?.data?.message || 'Failed to change password'); }
   };
@@ -79,6 +81,7 @@ export default function GuestSettings() {
     try {
       await api.put('/notifications/preferences', notifPrefs);
       setMsg4('Preferences updated successfully!');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setMsg4(''), 3000);
     } catch (err) { setMsg4('Failed to update preferences'); }
   };
@@ -193,7 +196,7 @@ export default function GuestSettings() {
                 <div style={{ fontSize: 13, fontWeight: 600 }}>Email Notifications</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Receive general updates via email</div>
               </div>
-              <input type="checkbox" checked={notifPrefs.email_notifications} onChange={e => setNotifPrefs({...notifPrefs, email_notifications: e.target.checked})} style={{ width: 16, height: 16 }} />
+              <input type="checkbox" checked={notifPrefs.email_system} onChange={e => setNotifPrefs({...notifPrefs, email_system: e.target.checked})} style={{ width: 16, height: 16 }} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: 16, marginBottom: 16 }}>
@@ -201,7 +204,7 @@ export default function GuestSettings() {
                 <div style={{ fontSize: 13, fontWeight: 600 }}>Booking Updates</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Get notified when your booking status changes</div>
               </div>
-              <input type="checkbox" checked={notifPrefs.booking_updates} onChange={e => setNotifPrefs({...notifPrefs, booking_updates: e.target.checked})} style={{ width: 16, height: 16 }} />
+              <input type="checkbox" checked={notifPrefs.email_booking} onChange={e => setNotifPrefs({...notifPrefs, email_booking: e.target.checked})} style={{ width: 16, height: 16 }} />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -209,7 +212,7 @@ export default function GuestSettings() {
                 <div style={{ fontSize: 13, fontWeight: 600 }}>Payment Updates</div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Get notified about successful or failed payments</div>
               </div>
-              <input type="checkbox" checked={notifPrefs.payment_updates} onChange={e => setNotifPrefs({...notifPrefs, payment_updates: e.target.checked})} style={{ width: 16, height: 16 }} />
+              <input type="checkbox" checked={notifPrefs.email_payment} onChange={e => setNotifPrefs({...notifPrefs, email_payment: e.target.checked})} style={{ width: 16, height: 16 }} />
             </div>
             <button className="btn-primary" type="submit">Save Preferences</button>
           </form>

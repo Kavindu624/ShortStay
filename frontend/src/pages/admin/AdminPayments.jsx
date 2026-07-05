@@ -82,8 +82,8 @@ export default function AdminPayments() {
                 ) : bookings.map(b => (
                   <tr key={b.booking_id}>
                     <td>#{b.booking_id}</td>
-                    <td>{b.User?.name || b.guest?.name || `Guest #${b.guest_id}`}</td>
-                    <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.Property?.title || `Property #${b.property_id}`}</td>
+                    <td>{b.guest?.name || b.User?.name || (typeof b.guest === 'string' ? b.guest : `Guest #${b.guest_id || 'Unknown'}`)}</td>
+                    <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.Property?.title || b.property?.title || (typeof b.property === 'string' ? b.property : `Property #${b.property_id || 'Unknown'}`)}</td>
                     <td style={{ fontSize: 12 }}>{b.checkin_date}</td>
                     <td style={{ fontSize: 12 }}>{b.checkout_date}</td>
                     <td style={{ fontWeight: 700 }}>Rs.{Number(b.total_price).toLocaleString()}</td>

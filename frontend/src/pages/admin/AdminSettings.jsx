@@ -1,15 +1,21 @@
 import { useState, useEffect } from 'react';
 import api from '../../api';
 import DashboardLayout from '../../components/DashboardLayout';
+import { useAuth } from '../../AuthContext';
+import { User, Lock, Settings } from 'lucide-react';
 
 export default function AdminSettings() {
+  const { user, updateUser } = useAuth();
+  
+  const [activeTab, setActiveTab] = useState('profile');
+  const [profile, setProfile] = useState({ name: user?.name || '', phone: user?.phone || '' });
+  const [pwd, setPwd] = useState({ current_password: '', new_password: '', confirm: '' });
+  const [msgProfile, setMsgProfile] = useState('');
+  const [msgPwd, setMsgPwd] = useState('');
   const [settings, setSettings] = useState({
     commissionRate: '10',
     minCommission: '5',
-    enableTax: false,
-    taxRate: '8.5',
-    taxId: 'XX-XXXXXXX',
-    cancellationPolicy: '',
+    cancellationPolicy: 'Moderate',
     minBookingDays: '1',
     maxAdvanceBooking: '365',
     notifNewBooking: true,
@@ -52,7 +58,8 @@ export default function AdminSettings() {
     setSaving(true);
     try {
       await api.put('/settings', settings);
-      setMsg('Settings saved successfully!');
+      setMsg('Platform settings saved successfully!');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setMsg(''), 3000);
     } catch (err) {
       setMsg('Failed to save settings.');
@@ -61,16 +68,95 @@ export default function AdminSettings() {
     }
   };
 
+  const saveProfile = async e => {
+    e.preventDefault(); setMsgProfile('');
+    try {
+      await api.put('/profile', { name: profile.name, phone: profile.phone });
+      updateUser({ name: profile.name, phone: profile.phone });
+      setMsgProfile('Profile updated successfully!');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => setMsgProfile(''), 3000);
+    } catch (err) { setMsgProfile(err.response?.data?.message || 'Failed to update profile'); }
+  };
+
+  const changePwd = async e => {
+    e.preventDefault(); setMsgPwd('');
+    if (pwd.new_password !== pwd.confirm) { setMsgPwd('New passwords do not match'); return; }
+    try {
+      await api.put('/auth/change-password', { current_password: pwd.current_password, new_password: pwd.new_password });
+      setMsgPwd('Password changed successfully!');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => setMsgPwd(''), 3000);
+      setPwd({ current_password: '', new_password: '', confirm: '' });
+    } catch (err) { setMsgPwd(err.response?.data?.message || 'Failed to change password'); }
+  };
+
   return (
     <DashboardLayout>
       <div className="page-header" style={{ marginBottom: 24 }}>
-        <div className="page-title">Platform Settings</div>
-        <div className="page-subtitle">Configure platform-wide settings and preferences</div>
+        <div className="page-title">Admin Settings</div>
+        <div className="page-subtitle">Configure your profile and platform-wide preferences</div>
       </div>
 
-      {msg && <div className="alert alert-success" style={{ marginBottom: 20 }}>{msg}</div>}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 16, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
+        <button 
+          style={{ 
+            padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer',
+            borderBottom: activeTab === 'profile' ? '2px solid var(--primary)' : '2px solid transparent',
+            color: activeTab === 'profile' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'profile' ? 600 : 500
+          }}
+          onClick={() => setActiveTab('profile')}
+        >
+          Admin Profile
+        </button>
+        <button 
+          style={{ 
+            padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer',
+            borderBottom: activeTab === 'platform' ? '2px solid var(--primary)' : '2px solid transparent',
+            color: activeTab === 'platform' ? 'var(--primary)' : 'var(--text-muted)',
+            fontWeight: activeTab === 'platform' ? 600 : 500
+          }}
+          onClick={() => setActiveTab('platform')}
+        >
+          Platform Configuration
+        </button>
+      </div>
 
-      <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
+        
+        {activeTab === 'profile' && (
+          <>
+            {/* Profile Info */}
+            <div className="card">
+              <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Admin Profile</h3>
+              {msgProfile && <div className={`alert ${msgProfile.includes('successfully') ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: 16 }}>{msgProfile}</div>}
+              <form onSubmit={saveProfile}>
+                <div className="form-group"><label className="form-label">Full Name</label><input className="form-input" value={profile.name} onChange={e => setProfile({ ...profile, name: e.target.value })} /></div>
+                <div className="form-group"><label className="form-label">Phone Number</label><input className="form-input" type="tel" value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} /></div>
+                <button className="btn-primary" type="submit">Save Profile</button>
+              </form>
+            </div>
+
+            {/* Change Password */}
+            <div className="card">
+              <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><Lock size={18} /> Change Password</h3>
+              {msgPwd && <div className={`alert ${msgPwd.includes('successfully') ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: 16 }}>{msgPwd}</div>}
+              <form onSubmit={changePwd}>
+                <div className="form-group"><label className="form-label">Current Password</label><input className="form-input" type="password" value={pwd.current_password} onChange={e => setPwd({ ...pwd, current_password: e.target.value })} required /></div>
+                <div className="form-group"><label className="form-label">New Password</label><input className="form-input" type="password" value={pwd.new_password} onChange={e => setPwd({ ...pwd, new_password: e.target.value })} required /></div>
+                <div className="form-group"><label className="form-label">Confirm New Password</label><input className="form-input" type="password" value={pwd.confirm} onChange={e => setPwd({ ...pwd, confirm: e.target.value })} required /></div>
+                <button className="btn-primary" type="submit">Change Password</button>
+              </form>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'platform' && (
+          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}><Settings size={22} /> Platform Configuration</h2>
+        {msg && <div className="alert alert-success">{msg}</div>}
         
         {/* Commission Configuration */}
         <div className="card" style={{ padding: 24 }}>
@@ -85,26 +171,6 @@ export default function AdminSettings() {
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label">Minimum Commission Amount ($)</label>
             <input type="number" name="minCommission" className="form-input" value={settings.minCommission} onChange={handleChange} />
-          </div>
-        </div>
-
-        {/* Tax Configuration */}
-        <div className="card" style={{ padding: 24 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Tax Configuration</h3>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <input type="checkbox" name="enableTax" id="enableTax" checked={settings.enableTax} onChange={handleChange} style={{ width: 16, height: 16 }} />
-            <label htmlFor="enableTax" style={{ fontSize: 14, fontWeight: 500 }}>Enable Tax Collection</label>
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">Default Tax Rate (%)</label>
-            <input type="number" step="0.1" name="taxRate" className="form-input" value={settings.taxRate} onChange={handleChange} />
-          </div>
-          
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Tax ID Number</label>
-            <input type="text" name="taxId" className="form-input" value={settings.taxId} onChange={handleChange} />
           </div>
         </div>
 
@@ -187,7 +253,9 @@ export default function AdminSettings() {
             {saving ? 'Saving...' : 'Save Settings'}
           </button>
         </div>
-      </form>
+          </form>
+        )}
+      </div>
     </DashboardLayout>
   );
 }
