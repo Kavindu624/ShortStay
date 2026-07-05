@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/settings.controller');
-const { protect } = require('../middleware/auth');
+const auth = require('../middleware/auth.middleware');
 
-router.get('/', protect, controller.getSettings);
-router.put('/', protect, controller.updateSettings);
+router.get('/', auth, controller.getSettings);
+router.put('/', auth, controller.updateSettings);
 
 module.exports = router;
