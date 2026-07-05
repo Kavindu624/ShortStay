@@ -33,6 +33,15 @@ export function AuthProvider({ children }) {
     setUser(MOCK ? MOCK_USERS.admin : null);
   };
 
+  /** Merge partial updates into the current user object (context + localStorage). */
+  const updateUser = (patch) => {
+    setUser(prev => {
+      const merged = { ...prev, ...patch };
+      localStorage.setItem('user', JSON.stringify(merged));
+      return merged;
+    });
+  };
+
   /**
    * Register a new user (guest or host).
    * The backend sends a verification email and returns { message }.
@@ -62,7 +71,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register, loading, switchMockRole, MOCK }}>
+    <AuthContext.Provider value={{ user, login, logout, register, updateUser, loading, switchMockRole, MOCK }}>
       {children}
     </AuthContext.Provider>
   );

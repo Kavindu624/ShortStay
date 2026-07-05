@@ -322,6 +322,11 @@ exports.login = async (req, res) => {
       details:  { role: user.role },
     });
 
+    // Build profile picture URL for the response
+    const profilePictureUrl = user.profile_picture
+      ? `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/profiles/${user.profile_picture}`
+      : null;
+
     res.status(200).json({
       message:    'Login successful',
       token,
@@ -334,6 +339,7 @@ exports.login = async (req, res) => {
         role:             user.role,
         membership_level: user.membership_level,
         is_verified:      user.is_verified,
+        profile_picture:  profilePictureUrl,
         ...roleData
       }
     });

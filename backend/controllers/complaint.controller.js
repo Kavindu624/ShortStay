@@ -25,6 +25,9 @@ exports.createComplaint = async (req, res) => {
     if (booking.guest_id !== req.user.user_id) {
       return res.status(403).json({ message: 'Not authorized' });
     }
+    if (!['confirmed', 'completed'].includes(booking.status)) {
+      return res.status(400).json({ message: 'Can only submit complaints for confirmed or completed bookings' });
+    }
 
     const complaint = await Complaint.create({
       booking_id,
@@ -73,6 +76,32 @@ exports.createComplaint = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
+// GET MY COMPLAINTS (Guest only — complaints for guest's own bookings)
+exports.getMyComplaints = async (req, res) => {
+  try {
+    // Get all bookings for this guest
+    const bookings = await Booking.findAll({
+      where: { guest_id: req.user.user_id },
+      attributes: ['booking_id'],
+    });
+    const bookingIds = bookings.map(b => b.booking_id);
+
+    if (bookingIds.length === 0) return res.status(200).json([]);
+
+    const complaints = await Complaint.findAll({
+      where: { booking_id: bookingIds },
+      include: [{ model: Booking, attributes: ['booking_id', 'checkin_date', 'checkout_date', 'property_id'] }],
+      order: [['complaint_id', 'DESC']],
+    });
+
+    res.status(200).json(complaints);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+
 
 // GET ALL COMPLAINTS (Admin only)
 exports.getAllComplaints = async (req, res) => {

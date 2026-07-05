@@ -28,8 +28,8 @@ exports.createReview = async (req, res) => {
     if (booking.guest_id !== req.user.user_id) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-    if (booking.status !== 'confirmed') {
-      return res.status(400).json({ message: 'Can only review confirmed bookings' });
+    if (booking.status !== 'completed') {
+      return res.status(400).json({ message: 'Can only review completed bookings' });
     }
 
     // Prevent duplicate reviews for the same booking
@@ -285,6 +285,19 @@ exports.getHostReviews = async (req, res) => {
       rating_breakdown: buildBreakdown(reviews),
       reviews,
     });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ─── MARK HELPFUL ───────────────────────────────────────────────────────────
+exports.markHelpful = async (req, res) => {
+  try {
+    const review = await Review.findByPk(req.params.id);
+    if (!review) return res.status(404).json({ message: 'Review not found' });
+    
+    await review.increment('helpful_count', { by: 1 });
+    res.status(200).json({ message: 'Review marked as helpful', helpful_count: review.helpful_count + 1 });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

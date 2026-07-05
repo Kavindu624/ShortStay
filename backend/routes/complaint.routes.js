@@ -36,6 +36,22 @@ router.post('/', auth, role('guest'), createComplaintValidator, validate, compla
 
 /**
  * @swagger
+ * /api/complaints/my:
+ *   get:
+ *     summary: Get complaints filed by the logged-in guest
+ *     tags: [Complaints]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of the guest's own complaints
+ *       403:
+ *         description: Forbidden — guests only
+ */
+router.get('/my', auth, role('guest'), complaintController.getMyComplaints);
+
+/**
+ * @swagger
  * /api/complaints:
  *   get:
  *     summary: Get all complaints (admin only)

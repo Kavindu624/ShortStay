@@ -58,6 +58,8 @@ router.get('/property/:property_id', reviewController.getPropertyReviews);
  *         description: Forbidden — guests only
  */
 router.post('/', auth, role('guest'), createReviewValidator, validate, reviewController.createReview);
+router.post('/:id/helpful', auth, reviewController.markHelpful);
+router.post('/:id/reply', auth, role('host'), reviewController.respondToReview);
 
 /**
  * @swagger

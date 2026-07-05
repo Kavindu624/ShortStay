@@ -3,44 +3,48 @@ import { useAuth } from '../AuthContext';
 import {
   LayoutDashboard, Home, Calendar, MessageSquare, DollarSign, Star,
   Settings, LogOut, Users, Building2, FileText, Search, Bell,
-  ShieldCheck, ClipboardList, CreditCard, BarChart3
+  ShieldCheck, ClipboardList, CreditCard, BarChart3, AlertCircle, Map
 } from 'lucide-react';
 
 const menuByRole = {
   guest: [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/guest' },
     { label: 'Browse Listings', icon: Home, path: '/guest/browse' },
     { label: 'My Bookings', icon: Calendar, path: '/guest/bookings' },
     { label: 'Wallet', icon: DollarSign, path: '/guest/wallet' },
     { label: 'My Reviews', icon: Star, path: '/guest/reviews' },
+    { label: 'Complaints', icon: AlertCircle, path: '/guest/complaints' },
     { label: 'Settings', icon: Settings, path: '/guest/settings' },
   ],
   host: [
     { label: 'My Listings', icon: Home, path: '/host/listings' },
     { label: 'Bookings', icon: Calendar, path: '/host/bookings' },
-    { label: 'Earnings', icon: DollarSign, path: '/host/earnings' },
+    { label: 'Availability', icon: Map, path: '/host/calendar' },
+    { label: 'Payouts', icon: DollarSign, path: '/host/payouts' },
     { label: 'Reviews', icon: Star, path: '/host/reviews' },
     { label: 'Settings', icon: Settings, path: '/host/settings' },
   ],
   admin: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { label: 'Users', icon: Users, path: '/admin/users' },
     { label: 'Properties', icon: Building2, path: '/admin/properties' },
     { label: 'Bookings', icon: Calendar, path: '/admin/bookings' },
-    { label: 'Verifier', icon: ShieldCheck, path: '/admin/verifier' },
-    { label: 'Accountant', icon: CreditCard, path: '/admin/accountant' },
-    { label: 'Users', icon: Users, path: '/admin/users' },
-    { label: 'Host', icon: Home, path: '/admin/host' },
+    { label: 'Complaints', icon: AlertCircle, path: '/admin/complaints' },
     { label: 'Payments', icon: DollarSign, path: '/admin/payments' },
     { label: 'Reports', icon: BarChart3, path: '/admin/reports' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' },
   ],
   field_inspector: [
-    { label: 'Inspections', icon: ClipboardList, path: '/inspector/inspections' },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/inspector/inspections' },
+    { label: 'Pending', icon: ClipboardList, path: '/inspector/pending' },
+    { label: 'History', icon: ShieldCheck, path: '/inspector/history' },
     { label: 'Settings', icon: Settings, path: '/inspector/settings' },
   ],
   payment_manager: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/pm/dashboard' },
-    { label: 'Payouts', icon: DollarSign, path: '/pm/payouts' },
     { label: 'Payments', icon: CreditCard, path: '/pm/payments' },
+    { label: 'Payouts', icon: DollarSign, path: '/pm/payouts' },
+    { label: 'Disputes', icon: AlertCircle, path: '/pm/disputes' },
     { label: 'Reports', icon: BarChart3, path: '/pm/reports' },
   ],
 };
@@ -66,7 +70,7 @@ export default function Sidebar() {
   return (
     <aside style={{
       width: 'var(--sidebar-w)', background: 'white', borderRight: '1px solid var(--border)',
-      display: 'flex', flexDirection: 'column', height: '100vh', position: 'fixed', left: 0, top: 0, zIndex: 100
+      display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, zIndex: 100
     }}>
       {/* Logo */}
       <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--border)' }}>
@@ -76,18 +80,20 @@ export default function Sidebar() {
           </div>
           <span style={{ fontWeight: 800, fontSize: 18, color: 'var(--primary)' }}>ShortStay</span>
         </div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, paddingLeft: 2 }}>{panelLabel[user?.role] || ''}</div>
       </div>
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
         {items.map(item => (
-          <NavLink key={item.path} to={item.path}
+          <NavLink key={item.path} to={item.path} end={item.path === '/guest'}
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px',
               borderRadius: 8, marginBottom: 2, fontWeight: 500, fontSize: 13,
               color: isActive ? 'white' : 'var(--text-muted)',
               background: isActive ? 'var(--primary)' : 'transparent',
               transition: 'all 0.15s',
+              textDecoration: 'none',
             })}>
             <item.icon size={16} />
             {item.label}

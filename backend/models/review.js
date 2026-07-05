@@ -8,6 +8,7 @@ const Review = sequelize.define('review', {
   rating:        { type: DataTypes.INTEGER },
   comment:       { type: DataTypes.TEXT },
   review_date:   { type: DataTypes.DATEONLY },
+  helpful_count: { type: DataTypes.INTEGER, defaultValue: 0 },
   host_response: { type: DataTypes.TEXT, defaultValue: null },
   response_date: { type: DataTypes.DATEONLY, defaultValue: null },
 }, { 

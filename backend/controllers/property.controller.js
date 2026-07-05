@@ -200,6 +200,11 @@ exports.getAllProperties = async (req, res) => {
           model: PropertyImage,
           as: 'images',
           required: false,
+        },
+        {
+          model: Review,
+          attributes: ['review_id'],
+          required: false,
         }
       ],
       order: [['overall_score', 'DESC']]
@@ -311,9 +316,24 @@ exports.getAllProperties = async (req, res) => {
       }
     }
 
+    const today = new Date().toISOString().split('T')[0];
+    const propertiesWithCount = await Promise.all(properties.map(async (property) => {
+      const prop = property.toJSON ? property.toJSON() : property;
+      if (prop.available_dates_count === undefined) {
+        prop.available_dates_count = await PropertyAvailability.count({
+          where: {
+            property_id:    prop.property_id,
+            is_booked:      false,
+            available_date: { [Op.gte]: today }
+          }
+        });
+      }
+      return prop;
+    }));
+
     res.status(200).json({
-      total:      properties.length,
-      properties,
+      total:      propertiesWithCount.length,
+      properties: propertiesWithCount,
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -469,11 +489,27 @@ exports.getMyProperties = async (req, res) => {
       order: [['property_id', 'DESC']]
     });
 
-    res.status(200).json(properties);
+    // For each property, count the remaining available (not booked) future dates
+    const today = new Date().toISOString().split('T')[0];
+    const withAvailability = await Promise.all(properties.map(async (p) => {
+      const availableCount = await PropertyAvailability.count({
+        where: {
+          property_id: p.property_id,
+          is_booked: false,
+          available_date: { [Op.gte]: today }
+        }
+      });
+      const plain = p.toJSON();
+      plain.available_dates_count = availableCount;
+      return plain;
+    }));
+
+    res.status(200).json(withAvailability);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
 
 // ─────────────────────────────────────────
 // UPLOAD MULTIPLE PROPERTY IMAGES (Host only)

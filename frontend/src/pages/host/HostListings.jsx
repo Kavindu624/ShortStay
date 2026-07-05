@@ -65,12 +65,14 @@ export default function HostListings() {
                   <div style={{ display: 'flex', gap: 24, fontSize: 13 }}>
                     <span>Price <strong>Rs.{Number(p.price_per_night).toLocaleString()}/night</strong></span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>Rating <Star size={12} color="#f59e0b" fill="#f59e0b" /><strong>{p.overall_score || '—'}</strong></span>
-                    <span>Status <strong style={{ color: p.is_approved ? 'var(--accent)' : 'var(--accent-orange)' }}>{p.is_approved ? 'Available' : 'Pending Approval'}</strong></span>
+                    <span>Status <strong style={{ color: !p.is_approved ? 'var(--accent-orange)' : p.available_dates_count === 0 ? '#dc2626' : 'var(--accent)' }}>
+                      {!p.is_approved ? 'Pending Approval' : p.available_dates_count === 0 ? 'Fully Booked' : `Available (${p.available_dates_count} dates)`}
+                    </strong></span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 160 }}>
                   <button className="btn-primary btn-sm" style={{ justifyContent: 'center' }} onClick={() => nav(`/host/listings/edit/${p.property_id}`)}><Edit2 size={12} /> Edit Details</button>
-                  <button className="btn-outline btn-sm" style={{ justifyContent: 'center' }} onClick={() => nav(`/host/listings/${p.property_id}/calendar`)}><Calendar size={12} /> Manage Calendar</button>
+                  <button className="btn-outline btn-sm" style={{ justifyContent: 'center' }} onClick={() => nav(`/host/calendar?property=${p.property_id}`)}><Calendar size={12} /> Manage Calendar</button>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button className="btn-outline btn-sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => nav(`/host/bookings`)}>View Bookings</button>
                     <button style={{ background: 'none', border: '1.5px solid #fee2e2', borderRadius: 8, padding: '5px 10px', color: 'var(--accent-red)', cursor: 'pointer' }} onClick={() => deleteProperty(p.property_id)}><Trash2 size={14} /></button>

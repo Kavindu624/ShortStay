@@ -16,7 +16,8 @@ export default function PropertyDetail() {
 
   useEffect(() => {
     api.get(`/properties/${id}`).then(r => setProperty(r.data)).catch(() => {});
-    api.get(`/reviews/property/${id}`).then(r => setReviews(r.data || [])).catch(() => {});
+    // Backend returns { total_reviews, average_rating, reviews: [...] }
+    api.get(`/reviews/property/${id}`).then(r => setReviews(r.data?.reviews || r.data || [])).catch(() => {});
   }, [id]);
 
   if (!property) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}><div style={{ color: 'var(--text-muted)' }}>Loading...</div></div>;

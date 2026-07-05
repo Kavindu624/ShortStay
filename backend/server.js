@@ -22,12 +22,28 @@ const app = express();
 // ── Non-functional middleware ─────────────────────────────────────────────────
 app.use(requestLogger);          // HTTP request log  (morgan)
 app.use(responseTimeMonitor);    // X-Response-Time header + slow-req warning
-app.use(globalRateLimit);        // 100 req / 15 min / IP
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: (origin, callback) => {
+    // Allow requests from any localhost port (dev), and the configured FRONTEND_URL
+    const allowed = [
+      process.env.FRONTEND_URL,
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+    ];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: Origin '${origin}' not allowed`));
+    }
+  },
   credentials: true
 }));
+
+app.use(globalRateLimit);        // 100 req / 15 min / IP
 
 // ── Stripe webhook — must receive RAW body before express.json() parses it ────
 app.use(
@@ -43,6 +59,8 @@ app.use('/uploads/profiles', express.static('uploads/profiles'));
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRateLimit, require('./routes/auth.routes'));
 app.use('/api/auth',          authRateLimit, require('./routes/oauth.routes'));
+app.use('/api/users',         require('./routes/profile.routes'));
+app.use('/api/settings',      require('./routes/settings.routes'));
 app.use('/api/properties',    require('./routes/property.routes'));
 app.use('/api/bookings',      require('./routes/booking.routes'));
 app.use('/api/payments',      require('./routes/payment.routes'));

@@ -15,9 +15,15 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const publicPaths = ['/login', '/register', '/forgot-password', '/verify-email', '/', '/about', '/contact'];
+      const currentPath = window.location.pathname;
+      const isAlreadyOnPublic = publicPaths.some(p => currentPath === p || currentPath.startsWith('/auth'));
+      // Don't redirect if we're already on a public page (avoid redirect loop)
+      if (!isAlreadyOnPublic) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }

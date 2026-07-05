@@ -1,0 +1,4748 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ShortStay API",
+    "version": "1.0.0",
+    "description": "\n## ShortStay Backend API\n\nA full-featured short-term property rental platform API.\n\n### Authentication\nMost endpoints require a JWT Bearer token. Include it in the `Authorization` header:\n```\nAuthorization: Bearer <your_token>\n```\n\n### Roles\n- **guest** — Can search properties, make bookings, write reviews, raise complaints\n- **host** — Can list/manage properties, manage bookings, receive payouts\n- **admin** — Full system access: user management, property approval, reports\n- **payment_manager** — Manages payments, refunds, disputes, payouts\n- **field_inspector** — Conducts property inspections and submits reports\n\n### Google OAuth Flow\n1. Frontend redirects browser to `GET /api/auth/google`\n2. After Google login, backend redirects to `{FRONTEND_URL}/auth/callback?token=...&role=...&user_id=...`\n3. Frontend stores the token from the URL query parameter\n      ",
+    "contact": {
+      "name": "ShortStay Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter the JWT token obtained from /api/auth/login"
+      }
+    },
+    "schemas": {
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "password",
+          "role"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "Secret@123"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "guest",
+              "host"
+            ],
+            "example": "guest"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "example": "Secret@123"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Login successful"
+          },
+          "token": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "user_id": {
+                "type": "integer",
+                "example": 1
+              },
+              "name": {
+                "type": "string",
+                "example": "John Doe"
+              },
+              "email": {
+                "type": "string",
+                "example": "john@example.com"
+              },
+              "role": {
+                "type": "string",
+                "example": "guest"
+              }
+            }
+          }
+        }
+      },
+      "Property": {
+        "type": "object",
+        "properties": {
+          "property_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Cozy Apartment in Colombo"
+          },
+          "description": {
+            "type": "string",
+            "example": "A lovely 2-bedroom apartment..."
+          },
+          "location": {
+            "type": "string",
+            "example": "Colombo 03, Sri Lanka"
+          },
+          "price_per_night": {
+            "type": "number",
+            "example": 75
+          },
+          "max_guests": {
+            "type": "integer",
+            "example": 4
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ],
+            "example": "approved"
+          },
+          "is_verified": {
+            "type": "boolean",
+            "example": true
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "http://localhost:5000/uploads/img1.jpg"
+            ]
+          }
+        }
+      },
+      "CreatePropertyRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "location",
+          "price_per_night",
+          "max_guests"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Cozy Apartment in Colombo"
+          },
+          "description": {
+            "type": "string",
+            "example": "A lovely 2-bedroom apartment..."
+          },
+          "location": {
+            "type": "string",
+            "example": "Colombo 03, Sri Lanka"
+          },
+          "price_per_night": {
+            "type": "number",
+            "example": 75
+          },
+          "max_guests": {
+            "type": "integer",
+            "example": 4
+          }
+        }
+      },
+      "Booking": {
+        "type": "object",
+        "properties": {
+          "booking_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "property_id": {
+            "type": "integer",
+            "example": 5
+          },
+          "guest_id": {
+            "type": "integer",
+            "example": 2
+          },
+          "checkin_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-07-01"
+          },
+          "checkout_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-07-05"
+          },
+          "total_price": {
+            "type": "number",
+            "example": 300
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "cancelled",
+              "rejected",
+              "expired"
+            ],
+            "example": "pending"
+          },
+          "cancellation_reason": {
+            "type": "string",
+            "example": "Change of plans"
+          }
+        }
+      },
+      "CreateBookingRequest": {
+        "type": "object",
+        "required": [
+          "property_id",
+          "checkin_date",
+          "checkout_date"
+        ],
+        "properties": {
+          "property_id": {
+            "type": "integer",
+            "example": 5
+          },
+          "checkin_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-07-01"
+          },
+          "checkout_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-07-05"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "review_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "property_id": {
+            "type": "integer",
+            "example": 5
+          },
+          "guest_id": {
+            "type": "integer",
+            "example": 2
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4
+          },
+          "comment": {
+            "type": "string",
+            "example": "Great place, very clean!"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Unauthorized"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Authentication — register, login, logout, password reset"
+    },
+    {
+      "name": "OAuth",
+      "description": "Google OAuth 2.0 login flow"
+    },
+    {
+      "name": "Profile",
+      "description": "User profile management"
+    },
+    {
+      "name": "Properties",
+      "description": "Property listings — browse, create, manage"
+    },
+    {
+      "name": "Availability",
+      "description": "Property availability and calendar management"
+    },
+    {
+      "name": "Bookings",
+      "description": "Booking management for guests and hosts"
+    },
+    {
+      "name": "Reviews",
+      "description": "Property reviews and ratings"
+    },
+    {
+      "name": "Payments",
+      "description": "Stripe payments, refunds, and disputes"
+    },
+    {
+      "name": "Payouts",
+      "description": "Host payout management"
+    },
+    {
+      "name": "Notifications",
+      "description": "In-app notification system"
+    },
+    {
+      "name": "Complaints",
+      "description": "Guest complaint submission and admin resolution"
+    },
+    {
+      "name": "Inspector",
+      "description": "Field inspector — property inspection workflow"
+    },
+    {
+      "name": "Admin",
+      "description": "Admin panel — user, property, and report management"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Role-specific dashboards"
+    }
+  ],
+  "paths": {
+    "/api/reviews/property/{property_id}": {
+      "get": {
+        "summary": "Get all reviews for a specific property (public)",
+        "tags": [
+          "Reviews"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Property ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reviews",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Review"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "summary": "Submit a review for a completed booking (guest only)",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "booking_id",
+                  "rating",
+                  "comment"
+                ],
+                "properties": {
+                  "booking_id": {
+                    "type": "integer",
+                    "example": 5
+                  },
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 4
+                  },
+                  "comment": {
+                    "type": "string",
+                    "example": "Great place, very clean and quiet!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Review submitted"
+          },
+          "400": {
+            "description": "Booking not completed or already reviewed"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}": {
+      "put": {
+        "summary": "Edit an existing review (guest only — must be own review)",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Review ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rating": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "example": 5
+                  },
+                  "comment": {
+                    "type": "string",
+                    "example": "Updated: even better than I remembered!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Review updated"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a review (guest only — must be own review)",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Review deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/reviews/my": {
+      "get": {
+        "summary": "Get all reviews written by the logged-in guest",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of guest's reviews"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/reviews/{id}/respond": {
+      "put": {
+        "summary": "Host responds to a review on their property",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Review ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "response"
+                ],
+                "properties": {
+                  "response": {
+                    "type": "string",
+                    "example": "Thank you for the kind words!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Response added to review"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/reviews/host": {
+      "get": {
+        "summary": "Get all reviews for the host's properties",
+        "tags": [
+          "Reviews"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of reviews for host's properties"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/properties/host/my-properties": {
+      "get": {
+        "summary": "Get all properties listed by the logged-in host",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of host's properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Property"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/properties/host/earnings": {
+      "get": {
+        "summary": "Get earnings summary for the logged-in host",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host earnings data"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/properties/host/dashboard": {
+      "get": {
+        "summary": "Get host dashboard overview (bookings, revenue, occupancy)",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host dashboard stats"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/properties/admin/verification-requests": {
+      "get": {
+        "summary": "Get all properties pending verification (admin only)",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of properties awaiting verification"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/properties": {
+      "get": {
+        "summary": "Get all approved properties (public — no auth required)",
+        "tags": [
+          "Properties"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "location",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by location keyword"
+          },
+          {
+            "in": "query",
+            "name": "min_price",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Minimum price per night"
+          },
+          {
+            "in": "query",
+            "name": "max_price",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Maximum price per night"
+          },
+          {
+            "in": "query",
+            "name": "max_guests",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Minimum guest capacity"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "properties": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Property"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    },
+                    "page": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new property listing (host only)",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePropertyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Property created — status is \"pending\" until approved by admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Property"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/properties/{id}": {
+      "get": {
+        "summary": "Get a single property by ID (public)",
+        "tags": [
+          "Properties"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Property ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Property"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a property listing (host only — must be owner)",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePropertyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property updated successfully"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a property listing (host only — must be owner)",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Property not found"
+          }
+        }
+      }
+    },
+    "/api/properties/{id}/upload": {
+      "post": {
+        "summary": "Upload images for a property (host only — max 10 images)",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Image files (max 10)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Images uploaded. Accessible at http://localhost:5000/uploads/<filename>"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/properties/{id}/primary-image": {
+      "put": {
+        "summary": "Set a primary (thumbnail) image for a property",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "image_id"
+                ],
+                "properties": {
+                  "image_id": {
+                    "type": "integer",
+                    "example": 3
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Primary image updated"
+          }
+        }
+      }
+    },
+    "/api/properties/{id}/images/{image_id}": {
+      "delete": {
+        "summary": "Delete a specific image from a property",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Property ID"
+          },
+          {
+            "in": "path",
+            "name": "image_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Image ID to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image deleted"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/properties/{id}/request-verification": {
+      "put": {
+        "summary": "Request a field inspection/verification for a property",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification requested — an inspector will be assigned"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/properties/{id}/cancel-verification": {
+      "delete": {
+        "summary": "Cancel a pending verification request",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verification request cancelled"
+          }
+        }
+      }
+    },
+    "/api/properties/{id}/verification-status": {
+      "put": {
+        "summary": "Update verification status (admin or field_inspector only)",
+        "tags": [
+          "Properties"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ],
+                    "example": "approved"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "example": "All requirements met."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification status updated"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "summary": "Get the full profile of the logged-in user",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "example": "John Doe"
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "john@example.com"
+                    },
+                    "role": {
+                      "type": "string",
+                      "example": "guest"
+                    },
+                    "profile_picture": {
+                      "type": "string",
+                      "example": "/uploads/profiles/avatar.jpg"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update basic profile info (any logged-in user)",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Jane Doe"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "+94771234567"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated"
+          }
+        }
+      }
+    },
+    "/api/profile/address": {
+      "put": {
+        "summary": "Update guest address (guest only)",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address_line1": {
+                    "type": "string",
+                    "example": "123 Main Street"
+                  },
+                  "city": {
+                    "type": "string",
+                    "example": "Colombo"
+                  },
+                  "country": {
+                    "type": "string",
+                    "example": "Sri Lanka"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "example": "00300"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Address updated"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/profile/bank-details": {
+      "put": {
+        "summary": "Update host bank details for payouts (host only)",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bank_name": {
+                    "type": "string",
+                    "example": "Bank of Ceylon"
+                  },
+                  "account_number": {
+                    "type": "string",
+                    "example": "0012345678"
+                  },
+                  "account_holder": {
+                    "type": "string",
+                    "example": "John Doe"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bank details updated"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/profile/picture": {
+      "post": {
+        "summary": "Upload a profile picture",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "profile_picture": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file for the profile picture"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile picture uploaded. Accessible at http://localhost:5000/uploads/profiles/<filename>"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete the profile picture",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile picture deleted"
+          }
+        }
+      }
+    },
+    "/api/profile/account": {
+      "delete": {
+        "summary": "Delete the logged-in user's own account",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account deleted"
+          }
+        }
+      }
+    },
+    "/api/profile/export": {
+      "get": {
+        "summary": "Export all your personal data (GDPR — right to data portability)",
+        "description": "Returns a downloadable JSON file containing all personal data ShortStay holds\nabout the logged-in user — profile, bookings, payments, reviews, complaints,\nand notifications. Complies with GDPR Article 20 (Right to Data Portability).\n",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON file containing all personal data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exported_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "export_note": {
+                      "type": "string"
+                    },
+                    "profile": {
+                      "type": "object"
+                    },
+                    "bookings_as_guest": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "bookings_as_host": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "payments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "reviews": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "complaints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "notifications": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/profile/{user_id}": {
+      "get": {
+        "summary": "View any user's profile (admin only)",
+        "tags": [
+          "Profile"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID of the user to view"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile data"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/payouts/my-payouts": {
+      "get": {
+        "summary": "Get all payouts for the logged-in host",
+        "tags": [
+          "Payouts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of host's payouts"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/payouts/summary": {
+      "get": {
+        "summary": "Get commission and platform revenue summary (payment_manager only)",
+        "tags": [
+          "Payouts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Commission summary data"
+          },
+          "403": {
+            "description": "Forbidden — payment_manager only"
+          }
+        }
+      }
+    },
+    "/api/payouts": {
+      "get": {
+        "summary": "Get all payouts with optional filters (payment_manager only)",
+        "tags": [
+          "Payouts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "processed"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated payout list"
+          },
+          "403": {
+            "description": "Forbidden — payment_manager only"
+          }
+        }
+      }
+    },
+    "/api/payouts/host/{host_id}": {
+      "get": {
+        "summary": "Get payouts for a specific host (payment_manager only)",
+        "tags": [
+          "Payouts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "host_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Host user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payout list for the host"
+          },
+          "403": {
+            "description": "Forbidden — payment_manager only"
+          }
+        }
+      }
+    },
+    "/api/payouts/generate/{booking_id}": {
+      "post": {
+        "summary": "Generate a payout record from a completed booking (payment_manager only)",
+        "tags": [
+          "Payouts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Payout record generated"
+          },
+          "400": {
+            "description": "Booking not completed or payout already exists"
+          },
+          "403": {
+            "description": "Forbidden — payment_manager only"
+          }
+        }
+      }
+    },
+    "/api/payouts/process/{payout_id}": {
+      "post": {
+        "summary": "Process (approve and send) a payout to host (payment_manager only)",
+        "tags": [
+          "Payouts"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payout_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payout processed and sent to host"
+          },
+          "400": {
+            "description": "Payout already processed"
+          },
+          "403": {
+            "description": "Forbidden — payment_manager only"
+          }
+        }
+      }
+    },
+    "/api/payments/webhook": {
+      "post": {
+        "summary": "Stripe webhook endpoint (called by Stripe — do not call manually)",
+        "tags": [
+          "Payments"
+        ],
+        "description": "This endpoint receives raw webhook events from Stripe. It is NOT called by the frontend.\nStripe calls this automatically after payment events (payment_intent.succeeded, etc.)\n",
+        "responses": {
+          "200": {
+            "description": "Webhook received"
+          }
+        }
+      }
+    },
+    "/api/payments/process": {
+      "post": {
+        "summary": "Process a payment for a booking (guest only — non-Stripe flow)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "booking_id",
+                  "payment_method"
+                ],
+                "properties": {
+                  "booking_id": {
+                    "type": "integer",
+                    "example": 5
+                  },
+                  "payment_method": {
+                    "type": "string",
+                    "example": "card"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment processed"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/payments/stripe/intent": {
+      "post": {
+        "summary": "Create a Stripe PaymentIntent (guest only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "description": "Returns a `clientSecret` that the frontend uses with Stripe Elements to confirm payment.\n```js\nconst { clientSecret } = await api.post('/payments/stripe/intent', { booking_id });\n// Then use stripe.confirmCardPayment(clientSecret, { payment_method: ... })\n```\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "booking_id"
+                ],
+                "properties": {
+                  "booking_id": {
+                    "type": "integer",
+                    "example": 5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PaymentIntent created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clientSecret": {
+                      "type": "string",
+                      "example": "pi_3xxx_secret_yyy"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/payments/stripe/confirm": {
+      "post": {
+        "summary": "Confirm a Stripe payment after frontend completes card entry",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "payment_intent_id"
+                ],
+                "properties": {
+                  "payment_intent_id": {
+                    "type": "string",
+                    "example": "pi_3xxx"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payment confirmed and booking updated"
+          }
+        }
+      }
+    },
+    "/api/payments/retry/{payment_id}": {
+      "post": {
+        "summary": "Retry a failed payment (guest only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment retried"
+          }
+        }
+      }
+    },
+    "/api/payments/my-payments": {
+      "get": {
+        "summary": "Get payment history for the logged-in user",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of payments made by the user"
+          }
+        }
+      }
+    },
+    "/api/payments/receipt/{booking_id}": {
+      "get": {
+        "summary": "Get payment receipt for a specific booking",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receipt data"
+          },
+          "404": {
+            "description": "Receipt not found"
+          }
+        }
+      }
+    },
+    "/api/payments/disputes": {
+      "post": {
+        "summary": "Raise a payment dispute (guest only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "booking_id",
+                  "reason"
+                ],
+                "properties": {
+                  "booking_id": {
+                    "type": "integer",
+                    "example": 5
+                  },
+                  "reason": {
+                    "type": "string",
+                    "example": "Property did not match the description"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dispute raised"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all disputes (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all disputes"
+          },
+          "403": {
+            "description": "Forbidden — payment_manager only"
+          }
+        }
+      }
+    },
+    "/api/payments/disputes/{id}/resolve": {
+      "put": {
+        "summary": "Resolve a dispute (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Dispute ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "resolution"
+                ],
+                "properties": {
+                  "resolution": {
+                    "type": "string",
+                    "example": "Refund approved after review"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dispute resolved"
+          }
+        }
+      }
+    },
+    "/api/payments/failed": {
+      "get": {
+        "summary": "Get all failed payments (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of failed payments"
+          }
+        }
+      }
+    },
+    "/api/payments/pending": {
+      "get": {
+        "summary": "Get all pending payments (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of pending payments"
+          }
+        }
+      }
+    },
+    "/api/payments": {
+      "get": {
+        "summary": "Get all payments (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all payments"
+          }
+        }
+      }
+    },
+    "/api/payments/report": {
+      "get": {
+        "summary": "Generate payment report (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment report data"
+          }
+        }
+      }
+    },
+    "/api/payments/refund/{booking_id}": {
+      "post": {
+        "summary": "Issue a full refund for a booking (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "Host cancelled last minute"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Refund issued"
+          }
+        }
+      }
+    },
+    "/api/payments/refund/{booking_id}/partial": {
+      "post": {
+        "summary": "Issue a partial refund (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amount"
+                ],
+                "properties": {
+                  "amount": {
+                    "type": "number",
+                    "example": 50
+                  },
+                  "reason": {
+                    "type": "string",
+                    "example": "Partial service failure"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Partial refund issued"
+          }
+        }
+      }
+    },
+    "/api/payments/status/{payment_id}": {
+      "put": {
+        "summary": "Manually update payment status (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "completed",
+                      "failed",
+                      "refunded"
+                    ],
+                    "example": "completed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated"
+          }
+        }
+      }
+    },
+    "/api/payments/reports/monthly": {
+      "get": {
+        "summary": "Monthly revenue report (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly revenue data"
+          }
+        }
+      }
+    },
+    "/api/payments/reports/by-property": {
+      "get": {
+        "summary": "Revenue breakdown by property (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revenue per property"
+          }
+        }
+      }
+    },
+    "/api/payments/reports/by-date": {
+      "get": {
+        "summary": "Revenue breakdown by date range (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revenue by date"
+          }
+        }
+      }
+    },
+    "/api/payments/reports/refunds": {
+      "get": {
+        "summary": "Refund activity report (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Refund data"
+          }
+        }
+      }
+    },
+    "/api/payments/reports/host-payouts": {
+      "get": {
+        "summary": "Host payout report (payment_manager only)",
+        "tags": [
+          "Payments"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host payout history"
+          }
+        }
+      }
+    },
+    "/api/auth/google": {
+      "get": {
+        "summary": "Initiate Google OAuth login",
+        "tags": [
+          "OAuth"
+        ],
+        "description": "**Do NOT call this with axios/fetch.** The frontend must redirect the browser to this URL:\n```\nwindow.location.href = 'http://localhost:5000/api/auth/google';\n```\nGoogle handles the authentication and redirects back to `/api/auth/google/callback`.\n",
+        "responses": {
+          "302": {
+            "description": "Redirects browser to Google login page"
+          }
+        }
+      }
+    },
+    "/api/auth/google/callback": {
+      "get": {
+        "summary": "Google OAuth callback (handled by backend — do not call directly)",
+        "tags": [
+          "OAuth"
+        ],
+        "description": "Google redirects here after the user logs in. The backend then redirects to the frontend:\n\n**On success:**\n```\n{FRONTEND_URL}/auth/callback?token=<jwt>&user_id=<id>&role=<role>&name=<name>\n```\nThe frontend must read `token` from the URL and store it in `localStorage`.\n\n**On failure:**\n```\n{FRONTEND_URL}/login?error=google_failed\n```\n**If user is suspended:**\n```\n{FRONTEND_URL}/login?error=suspended\n```\n",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "code",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Authorization code from Google (handled automatically)"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirects to frontend with token or error"
+          }
+        }
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "summary": "Get the count of unread notifications",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unread notification count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": {
+                      "type": "integer",
+                      "example": 3
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read-all": {
+      "put": {
+        "summary": "Mark all notifications as read",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All notifications marked as read"
+          }
+        }
+      }
+    },
+    "/api/notifications/preferences": {
+      "get": {
+        "summary": "Get notification preferences for the logged-in user",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification preferences"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update notification preferences",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email_notifications": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "booking_updates": {
+                    "type": "boolean",
+                    "example": true
+                  },
+                  "payment_updates": {
+                    "type": "boolean",
+                    "example": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preferences updated"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "summary": "Get all notifications for the logged-in user",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "is_read",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Filter by read status (false = unread only)"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by notification type (e.g. booking_created, payment_received)"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of notifications"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete all notifications for the logged-in user",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All notifications deleted"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "put": {
+        "summary": "Mark a single notification as read",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification marked as read"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}": {
+      "delete": {
+        "summary": "Delete a specific notification",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification deleted"
+          },
+          "404": {
+            "description": "Notification not found"
+          }
+        }
+      }
+    },
+    "/api/inspector/pending": {
+      "get": {
+        "summary": "Get all properties pending inspection (field_inspector only)",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of properties awaiting inspection"
+          },
+          "403": {
+            "description": "Forbidden — field_inspector only"
+          }
+        }
+      }
+    },
+    "/api/inspector/dashboard": {
+      "get": {
+        "summary": "Get inspector dashboard overview",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inspector dashboard stats (assigned, completed, pending)"
+          },
+          "403": {
+            "description": "Forbidden — field_inspector only"
+          }
+        }
+      }
+    },
+    "/api/inspector/history": {
+      "get": {
+        "summary": "Get inspection history for the logged-in inspector",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Past inspection records"
+          },
+          "403": {
+            "description": "Forbidden — field_inspector only"
+          }
+        }
+      }
+    },
+    "/api/inspector": {
+      "get": {
+        "summary": "Get all inspections assigned to the logged-in inspector",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of assigned inspections"
+          },
+          "403": {
+            "description": "Forbidden — field_inspector only"
+          }
+        }
+      }
+    },
+    "/api/inspector/submit": {
+      "post": {
+        "summary": "Submit an inspection report for a property",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "property_id",
+                  "result",
+                  "notes"
+                ],
+                "properties": {
+                  "property_id": {
+                    "type": "integer",
+                    "example": 3
+                  },
+                  "result": {
+                    "type": "string",
+                    "enum": [
+                      "passed",
+                      "failed"
+                    ],
+                    "example": "passed"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "example": "All safety standards met. Cleanliness is excellent."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Inspection report submitted"
+          },
+          "403": {
+            "description": "Forbidden — field_inspector only"
+          }
+        }
+      }
+    },
+    "/api/inspector/badge/{property_id}": {
+      "put": {
+        "summary": "Approve a verified badge for a property",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Badge approved — property is_verified becomes true"
+          },
+          "403": {
+            "description": "Forbidden — field_inspector only"
+          }
+        }
+      }
+    },
+    "/api/inspector/{inspection_id}/images": {
+      "post": {
+        "summary": "Upload images for an inspection report (max 5)",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "inspection_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Inspection evidence images (max 5)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Images uploaded successfully"
+          }
+        }
+      }
+    },
+    "/api/inspector/reports/inspections": {
+      "get": {
+        "summary": "Inspection report by date range (field_inspector only, ?format=csv supported)",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            },
+            "description": "Response format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inspection report"
+          }
+        }
+      }
+    },
+    "/api/inspector/reports/success-rate": {
+      "get": {
+        "summary": "Inspection pass/fail success rate report",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success rate statistics"
+          }
+        }
+      }
+    },
+    "/api/inspector/reports/approved-vs-rejected": {
+      "get": {
+        "summary": "Approved vs rejected properties report",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approved vs rejected comparison data"
+          }
+        }
+      }
+    },
+    "/api/inspector/assign": {
+      "post": {
+        "summary": "Assign a field inspector to a property (admin only)",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "property_id",
+                  "inspector_id"
+                ],
+                "properties": {
+                  "property_id": {
+                    "type": "integer",
+                    "example": 3
+                  },
+                  "inspector_id": {
+                    "type": "integer",
+                    "example": 7
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inspector assigned"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/inspector/all": {
+      "get": {
+        "summary": "Get all inspections system-wide (admin only)",
+        "tags": [
+          "Inspector"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All inspection records"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/dashboard/guest": {
+      "get": {
+        "summary": "Get guest dashboard (upcoming bookings, spending, etc.)",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Guest dashboard data"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/dashboard/host": {
+      "get": {
+        "summary": "Get host dashboard (properties, bookings, earnings overview)",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Host dashboard data"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/dashboard/admin": {
+      "get": {
+        "summary": "Get admin dashboard (system-wide stats, pending approvals)",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin dashboard data"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/dashboard/payment-manager": {
+      "get": {
+        "summary": "Get payment manager dashboard (payments, disputes, payouts)",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment manager dashboard data"
+          },
+          "403": {
+            "description": "Forbidden — payment_manager only"
+          }
+        }
+      }
+    },
+    "/api/dashboard/inspector": {
+      "get": {
+        "summary": "Get field inspector dashboard (assigned inspections, completed count)",
+        "tags": [
+          "Dashboard"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inspector dashboard data"
+          },
+          "403": {
+            "description": "Forbidden — field_inspector only"
+          }
+        }
+      }
+    },
+    "/api/complaints": {
+      "post": {
+        "summary": "Submit a complaint (guest only)",
+        "tags": [
+          "Complaints"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "booking_id",
+                  "subject",
+                  "description"
+                ],
+                "properties": {
+                  "booking_id": {
+                    "type": "integer",
+                    "example": 5
+                  },
+                  "subject": {
+                    "type": "string",
+                    "example": "Property was not as described"
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "The place was not clean and the amenities were broken."
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high"
+                    ],
+                    "example": "medium"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Complaint submitted"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      },
+      "get": {
+        "summary": "Get all complaints (admin only)",
+        "tags": [
+          "Complaints"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all complaints"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/complaints/{id}": {
+      "put": {
+        "summary": "Update complaint status (admin only)",
+        "tags": [
+          "Complaints"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Complaint ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "in_progress",
+                      "resolved",
+                      "closed"
+                    ],
+                    "example": "resolved"
+                  },
+                  "resolution": {
+                    "type": "string",
+                    "example": "Guest was issued a partial refund."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Complaint status updated"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/bookings": {
+      "post": {
+        "summary": "Make a booking for a property (guest only)",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Booking created — status is \"pending\" until host approves",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Property not available for selected dates"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/bookings/my": {
+      "get": {
+        "summary": "Get all bookings made by the logged-in guest",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of guest's bookings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Booking"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/cancel": {
+      "put": {
+        "summary": "Cancel a booking (guest only — must be own booking)",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking cancelled"
+          },
+          "403": {
+            "description": "Forbidden or booking cannot be cancelled"
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        }
+      }
+    },
+    "/api/bookings/host": {
+      "get": {
+        "summary": "Get all bookings for the host's properties",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of bookings for host's properties",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Booking"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/approve": {
+      "put": {
+        "summary": "Approve a pending booking (host only)",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking approved"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}/reject": {
+      "put": {
+        "summary": "Reject a pending booking (host only)",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking rejected"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}": {
+      "get": {
+        "summary": "Get a specific booking by ID (guest or host involved in the booking)",
+        "tags": [
+          "Bookings"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Booking ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied"
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        }
+      }
+    },
+    "/api/availability/check": {
+      "get": {
+        "summary": "Check if a property is available for given dates (public)",
+        "tags": [
+          "Availability"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "check_in",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-07-01"
+          },
+          {
+            "in": "query",
+            "name": "check_out",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "example": "2026-07-05"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability check result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "available": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/availability/calendar/{property_id}": {
+      "get": {
+        "summary": "Get full availability calendar for a property (public)",
+        "tags": [
+          "Availability"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "month",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-07",
+            "description": "Month in YYYY-MM format"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calendar with available and blocked dates"
+          }
+        }
+      }
+    },
+    "/api/availability/{property_id}": {
+      "get": {
+        "summary": "Get raw availability data for a property (public)",
+        "tags": [
+          "Availability"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability data"
+          }
+        }
+      }
+    },
+    "/api/availability/set": {
+      "post": {
+        "summary": "Set the full availability schedule for a property (host only)",
+        "tags": [
+          "Availability"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "property_id",
+                  "available_dates"
+                ],
+                "properties": {
+                  "property_id": {
+                    "type": "integer",
+                    "example": 3
+                  },
+                  "available_dates": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "example": [
+                      "2026-07-01",
+                      "2026-07-02",
+                      "2026-07-03"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Availability set"
+          },
+          "403": {
+            "description": "Forbidden — hosts only"
+          }
+        }
+      }
+    },
+    "/api/availability/add": {
+      "post": {
+        "summary": "Add additional available dates (host only)",
+        "tags": [
+          "Availability"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "property_id",
+                  "dates"
+                ],
+                "properties": {
+                  "property_id": {
+                    "type": "integer",
+                    "example": 3
+                  },
+                  "dates": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "example": [
+                      "2026-07-10",
+                      "2026-07-11"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dates added"
+          }
+        }
+      }
+    },
+    "/api/availability/remove": {
+      "delete": {
+        "summary": "Remove/block specific dates (host only)",
+        "tags": [
+          "Availability"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "property_id",
+                  "dates"
+                ],
+                "properties": {
+                  "property_id": {
+                    "type": "integer",
+                    "example": 3
+                  },
+                  "dates": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "example": [
+                      "2026-07-15",
+                      "2026-07-16"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dates removed/blocked"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "summary": "Register a new user",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully. A verification email is sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Registered successfully. Please verify your email."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or email already in use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Login with email and password",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful — returns JWT token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials or email not verified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/verify-email/{token}": {
+      "get": {
+        "summary": "Verify email address using the token sent by email",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Email verification token from the email link"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          }
+        }
+      }
+    },
+    "/api/auth/resend-verification": {
+      "post": {
+        "summary": "Resend email verification link",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification email resent"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "summary": "Send a password reset link to email",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset email sent"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/auth/reset-password/{token}": {
+      "post": {
+        "summary": "Reset password using the token from email",
+        "tags": [
+          "Auth"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Password reset token from the email link"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "NewSecret@123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful"
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "summary": "Logout and invalidate the current JWT token",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "summary": "Get the currently logged-in user's info",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns current user data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user_id": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "example": "John Doe"
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "john@example.com"
+                    },
+                    "role": {
+                      "type": "string",
+                      "example": "guest"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/update-profile": {
+      "put": {
+        "summary": "Update name or email of logged-in user",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Jane Doe"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "jane@example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/change-password": {
+      "put": {
+        "summary": "Change the password for the logged-in user",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "current_password",
+                  "new_password"
+                ],
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "OldSecret@123"
+                  },
+                  "new_password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "NewSecret@456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Incorrect current password"
+          }
+        }
+      }
+    },
+    "/api/auth/delete-account": {
+      "delete": {
+        "summary": "Delete the logged-in user's own account",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/auth/membership": {
+      "get": {
+        "summary": "Get membership/loyalty info for the logged-in guest",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Membership details returned"
+          },
+          "403": {
+            "description": "Forbidden — guests only"
+          }
+        }
+      }
+    },
+    "/api/auth/create-staff": {
+      "post": {
+        "summary": "Create a new staff account (admin only)",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password",
+                  "role"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Staff Member"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "staff@shortstay.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "Staff@123"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "payment_manager",
+                      "field_inspector"
+                    ],
+                    "example": "field_inspector"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Staff account created"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "summary": "Get all users (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by role (guest, host, admin, etc.)"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of all users"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}": {
+      "delete": {
+        "summary": "Delete a user account (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "User ID to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/suspend": {
+      "put": {
+        "summary": "Suspend a user account (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "Repeated policy violations"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User suspended"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}/unsuspend": {
+      "put": {
+        "summary": "Unsuspend a user account (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User unsuspended"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/admin/properties": {
+      "get": {
+        "summary": "Get all properties including pending ones (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all properties"
+          }
+        }
+      }
+    },
+    "/api/admin/properties/{id}/approve": {
+      "put": {
+        "summary": "Approve a property listing (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property approved — now visible to public"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/admin/properties/{id}/reject": {
+      "put": {
+        "summary": "Reject a property listing (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "example": "Images do not match the description"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property rejected"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": {
+        "summary": "Get admin dashboard statistics",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "System-wide statistics (users, bookings, revenue, etc.)"
+          },
+          "403": {
+            "description": "Forbidden — admins only"
+          }
+        }
+      }
+    },
+    "/api/admin/report": {
+      "get": {
+        "summary": "Generate a full system report (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Full system report"
+          }
+        }
+      }
+    },
+    "/api/admin/monitor": {
+      "get": {
+        "summary": "Get system health and performance metrics (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "System monitoring data"
+          }
+        }
+      }
+    },
+    "/api/admin/user-activity-report": {
+      "get": {
+        "summary": "Get user activity report (admin only)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User activity data"
+          }
+        }
+      }
+    },
+    "/api/admin/reports/bookings": {
+      "get": {
+        "summary": "Booking trends report (admin only, ?format=csv supported)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking report"
+          }
+        }
+      }
+    },
+    "/api/admin/reports/users": {
+      "get": {
+        "summary": "User registration trend report (admin only, ?format=csv supported)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User registration data"
+          }
+        }
+      }
+    },
+    "/api/admin/reports/properties": {
+      "get": {
+        "summary": "Property approval report (admin only, ?format=csv supported)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property approval/rejection statistics"
+          }
+        }
+      }
+    },
+    "/api/admin/reports/complaints": {
+      "get": {
+        "summary": "Complaint resolution report (admin only, ?format=csv supported)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Complaint resolution data"
+          }
+        }
+      }
+    },
+    "/api/admin/reports/activity": {
+      "get": {
+        "summary": "Platform activity log report (admin only, ?format=csv supported)",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Platform activity log"
+          }
+        }
+      }
+    }
+  }
+}

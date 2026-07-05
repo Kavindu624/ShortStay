@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Building2, CheckCircle, XCircle } from 'lucide-react';
 import api from '../../api';
@@ -8,8 +8,10 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
   const [message, setMessage] = useState('');
+  const hasCalled = useRef(false);
 
   useEffect(() => {
+    if (hasCalled.current) return;
     const token = searchParams.get('token');
     if (!token) {
       setStatus('error');

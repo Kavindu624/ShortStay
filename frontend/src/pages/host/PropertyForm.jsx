@@ -121,7 +121,7 @@ export default function PropertyForm() {
       }
 
       setMsg(isEdit ? 'Property updated!' : 'Property created! It will be visible after admin approval.');
-      if (!isEdit) setTimeout(() => nav('/host/listings'), 1800);
+      setTimeout(() => nav('/host/listings'), 1800);
     } catch (err) {
       setMsg(err.response?.data?.message || 'Failed to save property');
     } finally { setLoading(false); }

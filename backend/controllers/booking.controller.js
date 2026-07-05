@@ -126,7 +126,9 @@ exports.makeBooking = async (req, res) => {
       });
     }
 
-    // 5. Create booking with 24-hour expiry window
+    // 5. Mark dates as booked and create booking with 24-hour expiry window
+    await markAsBooked(property_id, checkin_date, checkout_date);
+
     const total_price = nights * property.price_per_night;
     const expires_at  = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24 h
 
@@ -218,9 +220,6 @@ exports.approveBooking = async (req, res) => {
 
     await booking.update({ status: 'confirmed' });
 
-    // Mark dates as booked
-    await markAsBooked(booking.property_id, booking.checkin_date, booking.checkout_date);
-
     // Update guest membership
     const newMembership = await updateMembership(booking.guest_id);
 
@@ -255,7 +254,7 @@ exports.approveBooking = async (req, res) => {
 
 exports.rejectBooking = async (req, res) => {
   try {
-    const { rejection_reason } = req.body;
+    const { rejection_reason } = req.body || {};
 
     const booking = await Booking.findByPk(req.params.id, {
       include: [{ model: Property, as: 'property' }],
@@ -275,6 +274,9 @@ exports.rejectBooking = async (req, res) => {
       status: 'rejected',
       rejection_reason: rejection_reason || null,
     });
+
+    // Free up the dates
+    await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);
 
     // Send rejection email to guest
     const guest = await User.findByPk(booking.guest_id);
@@ -306,7 +308,7 @@ exports.rejectBooking = async (req, res) => {
 
 exports.cancelBooking = async (req, res) => {
   try {
-    const { cancellation_reason } = req.body;
+    const { cancellation_reason } = req.body || {};
 
     const booking = await Booking.findByPk(req.params.id, {
       include: [{ model: Property, as: 'property' }],
@@ -335,10 +337,8 @@ exports.cancelBooking = async (req, res) => {
       refund_policy,
     });
 
-    // Free up availability only if booking was previously confirmed
-    if (wasConfirmed) {
-      await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);
-    }
+    // Free up availability for both pending and confirmed cancelled bookings
+    await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);
 
     // Update membership after cancellation
     await updateMembership(booking.guest_id);

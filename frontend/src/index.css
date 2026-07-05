@@ -123,6 +123,37 @@ a {
   font-weight: 500;
 }
 
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-warning:hover {
+  background: #d97706;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.btn-link:hover {
+  color: var(--primary-dark);
+}
+
 .form-group {
   margin-bottom: 16px;
 }
@@ -146,8 +177,13 @@ a {
 }
 
 .form-input:focus {
+  outline: none;
   border-color: var(--primary);
-  background: white;
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.react-datepicker-wrapper {
+  width: 100%;
 }
 
 .form-input::placeholder {

@@ -11,10 +11,10 @@ const requestLogger = morgan(
 );
 
 // ─── Global Rate Limiter ──────────────────────────────────────────────────────
-// 100 requests per 15 minutes per IP across all routes
+// 100 requests per 15 minutes per IP across all routes (increased to 5000 for dev)
 const globalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 5000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

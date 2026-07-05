@@ -14,6 +14,11 @@ export default function GuestDashboard() {
   useEffect(() => {
     api.get('/bookings/my').then(r => setBookings(r.data || [])).catch(() => {});
     api.get('/auth/membership').then(r => setMembership(r.data)).catch(() => {});
+    // Try to get pre-aggregated dashboard stats
+    api.get('/dashboard/guest').then(r => {
+      const d = r.data;
+      if (d) setMembership(prev => prev || d.membership);
+    }).catch(() => {});
   }, []);
 
   const upcoming = bookings.filter(b => b.status === 'confirmed' && new Date(b.checkin_date) >= new Date());
@@ -23,8 +28,8 @@ export default function GuestDashboard() {
   return (
     <DashboardLayout>
       <div className="page-header">
-        <div className="page-title">Guest</div>
-        <div className="page-subtitle">manage guest bookings</div>
+        <div className="page-title">Welcome back, {user?.name?.split(' ')[0] || 'Guest'} 👋</div>
+        <div className="page-subtitle">Here's what's happening with your bookings</div>
       </div>
 
       {/* Stats */}
@@ -62,7 +67,7 @@ export default function GuestDashboard() {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 700, fontSize: 16 }}>Total {Number(b.total_price).toLocaleString()}</div>
-                  <button className="btn-primary btn-sm" style={{ marginTop: 8 }} onClick={() => nav(`/guest/bookings/${b.booking_id}`)}>View Details</button>
+                  <button className="btn-primary btn-sm" style={{ marginTop: 8 }} onClick={() => nav('/guest/bookings')}>View Details</button>
                 </div>
               </div>
             ))}

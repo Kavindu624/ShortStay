@@ -7,6 +7,7 @@
 const { Booking, Property, User, Notification } = require('../models/index');
 const { Op } = require('sequelize');
 const sendEmail = require('./sendEmail');
+const { markAsAvailable } = require('../controllers/availability.controller');
 const { bookingExpiredEmail } = require('./emailTemplates');
 
 async function expireBookings() {
@@ -25,6 +26,9 @@ async function expireBookings() {
 
     for (const booking of expiredBookings) {
       await booking.update({ status: 'expired' });
+      
+      // Free up dates since they were locked when the pending booking was created
+      await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);
 
       // Notify guest via in-app notification
       try {

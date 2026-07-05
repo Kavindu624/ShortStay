@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
+import { useEffect } from 'react';
 
 // Public
 import Home from './pages/public/Home';
@@ -22,6 +23,7 @@ import PaymentPage from './pages/guest/PaymentPage';
 import GuestWallet from './pages/guest/GuestWallet';
 import GuestReviews from './pages/guest/GuestReviews';
 import GuestSettings from './pages/guest/GuestSettings';
+import GuestComplaints from './pages/guest/GuestComplaints';
 
 // Host
 import HostDashboard from './pages/host/HostDashboard';
@@ -29,6 +31,9 @@ import HostListings from './pages/host/HostListings';
 import PropertyForm from './pages/host/PropertyForm';
 import HostBookings from './pages/host/HostBookings';
 import HostReviews from './pages/host/HostReviews';
+import HostCalendar from './pages/host/HostCalendar';
+import HostPayouts from './pages/host/HostPayouts';
+import HostSettings from './pages/host/HostSettings';
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -40,10 +45,14 @@ import AdminReports from './pages/admin/AdminReports';
 
 // Inspector
 import InspectorDashboard from './pages/inspector/InspectorDashboard';
+import InspectorPending from './pages/inspector/InspectorPending';
+import InspectorHistory from './pages/inspector/InspectorHistory';
 
 // Payment Manager
 import PMDashboard from './pages/payment_manager/PMDashboard';
+import PMPayments from './pages/payment_manager/PMPayments';
 import PMReports from './pages/payment_manager/PMReports';
+import PMPayouts from './pages/payment_manager/PMPayouts';
 
 // Mock role switcher
 import RoleSwitcher from './components/RoleSwitcher';
@@ -66,6 +75,33 @@ function RoleRedirect() {
   return <Navigate to={home[user.role] || '/'} replace />;
 }
 
+/** Handles the Google OAuth callback at /auth/callback?token=xxx&role=xxx&name=xxx */
+function OAuthCallback() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { } = useAuth(); // just to ensure context is ready
+
+  useEffect(() => {
+    const token = params.get('token');
+    const role = params.get('role');
+    const name = params.get('name');
+    const userId = params.get('user_id');
+
+    if (token) {
+      localStorage.setItem('token', token);
+      const userObj = { user_id: Number(userId), role, name };
+      localStorage.setItem('user', JSON.stringify(userObj));
+      // Hard reload so AuthContext picks up the new user from localStorage
+      const home = { guest: '/guest/browse', host: '/host/listings', admin: '/admin/dashboard', field_inspector: '/inspector/inspections', payment_manager: '/pm/dashboard' };
+      window.location.href = home[role] || '/';
+    } else {
+      navigate('/login?error=google_failed', { replace: true });
+    }
+  }, []);
+
+  return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Logging in via Google...</div>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -85,6 +121,9 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
+          {/* OAuth callback */}
+          <Route path="/auth/callback" element={<OAuthCallback />} />
+
           {/* Portal redirect */}
           <Route path="/portal" element={<RoleRedirect />} />
 
@@ -96,6 +135,7 @@ export default function App() {
           <Route path="/guest/pay/:bookingId" element={<ProtectedRoute role="guest"><PaymentPage /></ProtectedRoute>} />
           <Route path="/guest/wallet" element={<ProtectedRoute role="guest"><GuestWallet /></ProtectedRoute>} />
           <Route path="/guest/reviews" element={<ProtectedRoute role="guest"><GuestReviews /></ProtectedRoute>} />
+          <Route path="/guest/complaints" element={<ProtectedRoute role="guest"><GuestComplaints /></ProtectedRoute>} />
           <Route path="/guest/settings" element={<ProtectedRoute role="guest"><GuestSettings /></ProtectedRoute>} />
 
           {/* Host */}
@@ -104,7 +144,8 @@ export default function App() {
           <Route path="/host/listings/new" element={<ProtectedRoute role="host"><PropertyForm /></ProtectedRoute>} />
           <Route path="/host/listings/edit/:id" element={<ProtectedRoute role="host"><PropertyForm /></ProtectedRoute>} />
           <Route path="/host/bookings" element={<ProtectedRoute role="host"><HostBookings /></ProtectedRoute>} />
-          <Route path="/host/earnings" element={<ProtectedRoute role="host"><HostDashboard /></ProtectedRoute>} />
+          <Route path="/host/calendar" element={<ProtectedRoute role="host"><HostCalendar /></ProtectedRoute>} />
+          <Route path="/host/payouts" element={<ProtectedRoute role="host"><HostPayouts /></ProtectedRoute>} />
           <Route path="/host/reviews" element={<ProtectedRoute role="host"><HostReviews /></ProtectedRoute>} />
           <Route path="/host/settings" element={<ProtectedRoute role="host"><GuestSettings /></ProtectedRoute>} />
 
@@ -112,22 +153,24 @@ export default function App() {
           <Route path="/admin/dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/properties" element={<ProtectedRoute role="admin"><AdminProperties /></ProtectedRoute>} />
+          <Route path="/admin/complaints" element={<ProtectedRoute role="admin"><AdminComplaints /></ProtectedRoute>} />
           <Route path="/admin/bookings" element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
           <Route path="/admin/payments" element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
-          <Route path="/admin/verifier" element={<ProtectedRoute role="admin"><AdminProperties /></ProtectedRoute>} />
-          <Route path="/admin/accountant" element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
-          <Route path="/admin/host" element={<ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
 
           {/* Inspector */}
+          <Route path="/inspector" element={<ProtectedRoute role="field_inspector"><InspectorDashboard /></ProtectedRoute>} />
           <Route path="/inspector/inspections" element={<ProtectedRoute role="field_inspector"><InspectorDashboard /></ProtectedRoute>} />
+          <Route path="/inspector/pending" element={<ProtectedRoute role="field_inspector"><InspectorPending /></ProtectedRoute>} />
+          <Route path="/inspector/history" element={<ProtectedRoute role="field_inspector"><InspectorHistory /></ProtectedRoute>} />
           <Route path="/inspector/settings" element={<ProtectedRoute role="field_inspector"><InspectorDashboard /></ProtectedRoute>} />
 
           {/* Payment Manager */}
           <Route path="/pm/dashboard" element={<ProtectedRoute role="payment_manager"><PMDashboard /></ProtectedRoute>} />
-          <Route path="/pm/payouts" element={<ProtectedRoute role="payment_manager"><PMDashboard /></ProtectedRoute>} />
-          <Route path="/pm/payments" element={<ProtectedRoute role="payment_manager"><PMDashboard /></ProtectedRoute>} />
+          <Route path="/pm/payouts" element={<ProtectedRoute role="payment_manager"><PMPayouts /></ProtectedRoute>} />
+          <Route path="/pm/payments" element={<ProtectedRoute role="payment_manager"><PMPayments /></ProtectedRoute>} />
+          <Route path="/pm/disputes" element={<ProtectedRoute role="payment_manager"><PMPayments /></ProtectedRoute>} />
           <Route path="/pm/reports" element={<ProtectedRoute role="payment_manager"><PMReports /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
