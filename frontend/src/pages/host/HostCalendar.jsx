@@ -12,7 +12,9 @@ function buildCalendar(year, month) {
   for (let i = 0; i < start.getDay(); i++) days.push(null);
   for (let d = 1; d <= end.getDate(); d++) {
     const dt = new Date(year, month, d);
-    const str = dt.toISOString().substring(0, 10);
+    // Correct for timezone offset before converting to ISO string
+    const tzoffset = dt.getTimezoneOffset() * 60000;
+    const str = new Date(dt.getTime() - tzoffset).toISOString().split('T')[0];
     days.push({ date: d, str, isPast: dt < new Date(new Date().setHours(0, 0, 0, 0)) });
   }
   return days;
@@ -112,7 +114,10 @@ export default function HostCalendar() {
 
   return (
     <DashboardLayout>
-      <div className="page-header"><div className="page-title">Availability Calendar</div><div className="page-subtitle">Manage available and blocked dates for your properties</div></div>
+      <div className="page-header">
+        <div className="page-title">Availability Calendar</div>
+        <div className="page-subtitle">Manage available and blocked dates for your properties. <strong style={{ color: 'var(--primary)' }}>Note: You are marking the nights the guest will stay.</strong> A guest can check out on the morning of a blocked date.</div>
+      </div>
 
       {/* Property selector */}
       {properties.length > 1 && (

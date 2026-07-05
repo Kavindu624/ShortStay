@@ -193,7 +193,10 @@ exports.addDates = async (req, res) => {
     const existing = await PropertyAvailability.findAll({
       where: { property_id, available_date: { [Op.in]: dates } }
     });
-    const existingDates = existing.map(e => e.available_date.toISOString().split('T')[0]);
+    const existingDates = existing.map(e => {
+      const d = e.available_date;
+      return (d instanceof Date) ? d.toISOString().split('T')[0] : String(d);
+    });
     const newDates = dates.filter(d => !existingDates.includes(d));
 
     if (newDates.length === 0) {

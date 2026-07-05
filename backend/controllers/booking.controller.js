@@ -123,14 +123,8 @@ exports.makeBooking = async (req, res) => {
       where: {
         property_id,
         status: { [Op.in]: ['pending', 'confirmed'] },
-        [Op.or]: [
-          { checkin_date:  { [Op.between]: [checkin_date, checkout_date] } },
-          { checkout_date: { [Op.between]: [checkin_date, checkout_date] } },
-          {
-            checkin_date:  { [Op.lte]: checkin_date },
-            checkout_date: { [Op.gte]: checkout_date },
-          },
-        ],
+        checkin_date:  { [Op.lt]: checkout_date },
+        checkout_date: { [Op.gt]: checkin_date },
       },
     });
     if (overlap) {

@@ -39,6 +39,25 @@ export default function GuestPropertyDetail() {
     return availableDatesStr.includes(str);
   };
 
+  const isCheckoutAvailable = (date) => {
+    if (!checkin) return false;
+    const tzoffset = date.getTimezoneOffset() * 60000;
+    const targetStr = new Date(date - tzoffset).toISOString().split('T')[0];
+    
+    let curr = new Date(checkin);
+    const target = new Date(targetStr);
+    
+    // Checkout must be strictly after checkin
+    if (target <= curr) return false;
+
+    // All nights between checkin and checkout must be available
+    while (curr < target) {
+      if (!availableDatesStr.includes(curr.toISOString().split('T')[0])) return false;
+      curr.setDate(curr.getDate() + 1);
+    }
+    return true;
+  };
+
   const nights = checkin && checkout ? Math.max(0, Math.ceil((new Date(checkout) - new Date(checkin)) / 86400000)) : 0;
   const total = nights * Number(property.price_per_night);
 
@@ -162,7 +181,7 @@ export default function GuestPropertyDetail() {
                         setCheckout(new Date(date - tzoffset).toISOString().split('T')[0]);
                       } else setCheckout('');
                     }}
-                    filterDate={isAvailable}
+                    filterDate={isCheckoutAvailable}
                     minDate={checkin ? new Date(checkin) : new Date()}
                     className="form-input"
                     placeholderText="Select date"
