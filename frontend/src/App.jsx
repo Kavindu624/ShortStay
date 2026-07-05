@@ -33,7 +33,6 @@ import HostBookings from './pages/host/HostBookings';
 import HostReviews from './pages/host/HostReviews';
 import HostCalendar from './pages/host/HostCalendar';
 import HostPayouts from './pages/host/HostPayouts';
-import HostSettings from './pages/host/HostSettings';
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -42,6 +41,7 @@ import AdminProperties from './pages/admin/AdminProperties';
 import AdminComplaints from './pages/admin/AdminComplaints';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminReports from './pages/admin/AdminReports';
+import AdminSettings from './pages/admin/AdminSettings';
 
 // Inspector
 import InspectorDashboard from './pages/inspector/InspectorDashboard';
@@ -157,7 +157,7 @@ export default function App() {
           <Route path="/admin/bookings" element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
           <Route path="/admin/payments" element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
-          <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute>} />
 
           {/* Inspector */}
           <Route path="/inspector" element={<ProtectedRoute role="field_inspector"><InspectorDashboard /></ProtectedRoute>} />

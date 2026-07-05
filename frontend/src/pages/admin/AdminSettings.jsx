@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../../api';
+import DashboardLayout from '../../components/DashboardLayout';
 
-export default function HostSettings() {
+export default function AdminSettings() {
   const [settings, setSettings] = useState({
     commissionRate: '10',
     minCommission: '5',
@@ -61,7 +62,7 @@ export default function HostSettings() {
   };
 
   return (
-    <div>
+    <DashboardLayout>
       <div className="page-header" style={{ marginBottom: 24 }}>
         <div className="page-title">Platform Settings</div>
         <div className="page-subtitle">Configure platform-wide settings and preferences</div>
@@ -187,6 +188,6 @@ export default function HostSettings() {
           </button>
         </div>
       </form>
-    </div>
+    </DashboardLayout>
   );
 }

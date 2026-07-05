@@ -4,7 +4,6 @@ import api from '../../api';
 import { useAuth } from '../../AuthContext';
 import { getProfileUrl } from '../../utils';
 import { User, Lock, Trash2, Camera, Bell } from 'lucide-react';
-import HostSettings from '../host/HostSettings';
 
 export default function GuestSettings() {
   const { user, logout, updateUser } = useAuth();
@@ -122,19 +121,8 @@ export default function GuestSettings() {
 
   return (
     <DashboardLayout>
-      {user?.role === 'host' && (
-        <div style={{ display: 'flex', gap: 24, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
-          <button onClick={() => setActiveTab('profile')} style={{ padding: '12px 0', background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'profile' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Profile Settings</button>
-          <button onClick={() => setActiveTab('platform')} style={{ padding: '12px 0', background: 'none', border: 'none', borderBottom: activeTab === 'platform' ? '2px solid var(--primary)' : '2px solid transparent', color: activeTab === 'platform' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>Platform Settings</button>
-        </div>
-      )}
-
-      {activeTab === 'platform' ? (
-        <HostSettings />
-      ) : (
-        <>
-          <div className="page-header"><div className="page-title">Settings</div><div className="page-subtitle">Manage your account information and preferences</div></div>
-          <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="page-header"><div className="page-title">Settings</div><div className="page-subtitle">Manage your account information and preferences</div></div>
+      <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
         {/* Profile Picture */}
         <div className="card">
@@ -237,8 +225,6 @@ export default function GuestSettings() {
           <button className="btn-danger" onClick={deleteAccount}>Delete My Account</button>
         </div>
         </div>
-        </>
-      )}
     </DashboardLayout>
   );
 }

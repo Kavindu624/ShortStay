@@ -81,10 +81,11 @@ export default function HostBookings() {
             <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 16 }}>All Bookings</div>
             <div className="table-wrap">
               <table>
-                <thead><tr><th style={{ width: '8%' }}>Booking ID</th><th>Guest</th><th>Property</th><th style={{ whiteSpace: 'nowrap' }}>Check-in</th><th style={{ whiteSpace: 'nowrap' }}>Check-out</th><th>Nights</th><th>Your Earning</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th style={{ width: '5%' }}>Booking ID</th><th>Guest</th><th>Property</th><th style={{ whiteSpace: 'nowrap' }}>Check-in</th><th style={{ whiteSpace: 'nowrap' }}>Check-out</th><th>Nights</th><th>Your Earning</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
                   {bookings.map(b => {
-                    const total = Number(b.total_price);
+                    const isCancelledOrRejected = b.status === 'cancelled' || b.status === 'rejected';
+                    const total = isCancelledOrRejected ? 0 : Number(b.total_price);
                     const fee = total * (commissionRate / 100);
                     const earning = total - fee;
                     return (
@@ -95,11 +96,13 @@ export default function HostBookings() {
                           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{b.guest?.email || 'N/A'}</div>
                         </td>
                         <td>{b.property?.title || `Property #${b.property_id}`}</td>
-                        <td>{b.checkin_date}</td>
-                        <td>{b.checkout_date}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{b.checkin_date}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{b.checkout_date}</td>
                         <td>{calculateNights(b.checkin_date, b.checkout_date)}</td>
                         <td>
-                          <div style={{ fontWeight: 600, color: '#10b981', marginBottom: 2 }}>{earning.toLocaleString()} LKR</div>
+                          <div style={{ fontWeight: 600, color: isCancelledOrRejected ? 'var(--text-muted)' : '#10b981', marginBottom: 2, textDecoration: isCancelledOrRejected ? 'line-through' : 'none' }}>
+                            {earning.toLocaleString()} LKR
+                          </div>
                           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Fee: {fee.toLocaleString()} LKR</div>
                         </td>
                         <td><span className={`badge ${statusBadge[b.status] || 'badge-gray'}`}>{b.status}</span></td>
