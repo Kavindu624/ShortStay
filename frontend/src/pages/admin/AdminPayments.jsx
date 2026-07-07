@@ -125,7 +125,7 @@ export default function AdminPayments() {
           <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>Refunds & Payouts</span>
         </div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-          To issue refunds or process payouts, use the <strong>Payment Manager</strong> portal which has full financial control capabilities.
+          To issue refunds or process payouts, use the <strong>Accountant</strong> portal which has full financial control capabilities.
         </p>
       </div>
     </DashboardLayout>

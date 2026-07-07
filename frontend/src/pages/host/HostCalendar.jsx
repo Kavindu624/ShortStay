@@ -32,6 +32,7 @@ export default function HostCalendar() {
   const [properties, setProperties] = useState([]);
   const [selectedProp, setSelectedProp] = useState(initialProp);
   const [availability, setAvailability] = useState([]); // list of available date strings
+  const [bookedDates, setBookedDates] = useState([]); // list of booked date strings
   const [selected, setSelected] = useState(new Set());
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,14 +50,10 @@ export default function HostCalendar() {
 
   useEffect(() => {
     if (!selectedProp) return;
-    api.get(`/availability/${selectedProp}`)
+    api.get(`/availability/calendar/${selectedProp}`)
       .then(r => {
-        const data = r.data;
-        // Backend may return array of { available_date } or array of date strings
-        const dates = Array.isArray(data)
-          ? data.map(d => typeof d === 'string' ? d : d.available_date || d.date || '')
-          : [];
-        setAvailability(dates.filter(Boolean));
+        setAvailability(r.data.available_dates || []);
+        setBookedDates(r.data.booked_dates || []);
         setSelected(new Set());
       })
       .catch(() => {});
@@ -101,7 +98,7 @@ export default function HostCalendar() {
     if (!confirm('This will replace the entire availability schedule for this property with the selected dates. Continue?')) return;
     setMsg(''); setLoading(true);
     try {
-      await api.post('/availability/set', { property_id: Number(selectedProp), available_dates: [...selected] });
+      await api.post('/availability/set', { property_id: Number(selectedProp), dates: [...selected] });
       setAvailability([...selected]);
       setSelected(new Set());
       setMsg('Availability schedule updated!');
@@ -150,18 +147,37 @@ export default function HostCalendar() {
             {days.map((day, i) => {
               if (!day) return <div key={i} />;
               const isAvailable = availability.includes(day.str);
+              const isBooked = bookedDates.includes(day.str);
               const isSelected = selected.has(day.str);
+              
+              let bg = 'white';
+              let col = 'var(--text-main)';
+              
+              if (isSelected) {
+                bg = 'var(--primary)';
+                col = 'white';
+              } else if (isBooked) {
+                bg = '#fee2e2'; // Light red
+                col = '#dc2626'; // Red text
+              } else if (isAvailable) {
+                bg = '#d1fae5';
+                col = '#065f46';
+              } else if (day.isPast) {
+                bg = '#f9fafb';
+                col = '#d1d5db';
+              }
+
               return (
                 <button
                   key={day.str}
-                  onClick={() => toggleDay(day.str, day.isPast)}
+                  onClick={() => toggleDay(day.str, day.isPast || isBooked)}
                   style={{
                     padding: '8px 4px',
                     borderRadius: 8,
                     border: isSelected ? '2px solid var(--primary)' : '2px solid transparent',
-                    background: isSelected ? 'var(--primary)' : isAvailable ? '#d1fae5' : day.isPast ? '#f9fafb' : 'white',
-                    color: isSelected ? 'white' : day.isPast ? '#d1d5db' : isAvailable ? '#065f46' : 'var(--text-main)',
-                    cursor: day.isPast ? 'not-allowed' : 'pointer',
+                    background: bg,
+                    color: col,
+                    cursor: (day.isPast || isBooked) ? 'not-allowed' : 'pointer',
                     fontWeight: 600,
                     fontSize: 13,
                     textAlign: 'center',
@@ -179,6 +195,7 @@ export default function HostCalendar() {
             {[
               { color: '#d1fae5', text: 'Available' },
               { color: 'var(--primary)', text: 'Selected' },
+              { color: '#fee2e2', text: 'Booked' },
               { color: 'white', border: '1px solid #e5e7eb', text: 'Unavailable' },
             ].map(l => (
               <div key={l.text} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>

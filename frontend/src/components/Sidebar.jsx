@@ -34,13 +34,13 @@ const menuByRole = {
     { label: 'Reports', icon: BarChart3, path: '/admin/reports' },
     { label: 'Settings', icon: Settings, path: '/admin/settings' },
   ],
-  field_inspector: [
+  verifier: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/inspector/inspections' },
     { label: 'Pending', icon: ClipboardList, path: '/inspector/pending' },
     { label: 'History', icon: ShieldCheck, path: '/inspector/history' },
     { label: 'Settings', icon: Settings, path: '/inspector/settings' },
   ],
-  payment_manager: [
+  accountant: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/pm/dashboard' },
     { label: 'Payments', icon: CreditCard, path: '/pm/payments' },
     { label: 'Payouts', icon: DollarSign, path: '/pm/payouts' },
@@ -53,8 +53,8 @@ const panelLabel = {
   guest: 'Guest Panel',
   host: 'Host Panel',
   admin: 'Admin Panel',
-  field_inspector: 'Inspector Panel',
-  payment_manager: 'Accountant Panel',
+  verifier: 'Inspector Panel',
+  accountant: 'Accountant Panel',
 };
 
 export default function Sidebar() {
@@ -87,6 +87,7 @@ export default function Sidebar() {
       <nav style={{ flex: 1, padding: '12px 8px', overflowY: 'auto' }}>
         {items.map(item => (
           <NavLink key={item.path} to={item.path} end={item.path === '/guest'}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px',
               borderRadius: 8, marginBottom: 2, fontWeight: 500, fontSize: 13,

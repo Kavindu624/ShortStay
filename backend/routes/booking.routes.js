@@ -152,6 +152,30 @@ router.put('/:id/reject', auth, role('host'), bookingController.rejectBooking);
 
 /**
  * @swagger
+ * /api/bookings/{id}/complete:
+ *   put:
+ *     summary: Mark a confirmed booking as completed (host only)
+ *     tags: [Bookings]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *         description: Booking ID
+ *     responses:
+ *       200:
+ *         description: Booking marked as completed
+ *       403:
+ *         description: Forbidden — hosts only
+ *       404:
+ *         description: Booking not found
+ */
+router.put('/:id/complete', auth, role('host'), bookingController.completeBooking);
+
+/**
+ * @swagger
  * /api/bookings/{id}:
  *   get:
  *     summary: Get a specific booking by ID (guest or host involved in the booking)

@@ -24,7 +24,7 @@ router.get('/my-payouts', auth, role('host'), payoutController.getMyPayouts);
  * @swagger
  * /api/payouts/summary:
  *   get:
- *     summary: Get commission and platform revenue summary (payment_manager only)
+ *     summary: Get commission and platform revenue summary (accountant only)
  *     tags: [Payouts]
  *     security:
  *       - BearerAuth: []
@@ -32,15 +32,15 @@ router.get('/my-payouts', auth, role('host'), payoutController.getMyPayouts);
  *       200:
  *         description: Commission summary data
  *       403:
- *         description: Forbidden — payment_manager only
+ *         description: Forbidden — accountant only
  */
-router.get('/summary', auth, role('payment_manager'), payoutController.getCommissionSummary);
+router.get('/summary', auth, role('accountant'), payoutController.getCommissionSummary);
 
 /**
  * @swagger
  * /api/payouts:
  *   get:
- *     summary: Get all payouts with optional filters (payment_manager only)
+ *     summary: Get all payouts with optional filters (accountant only)
  *     tags: [Payouts]
  *     security:
  *       - BearerAuth: []
@@ -55,15 +55,15 @@ router.get('/summary', auth, role('payment_manager'), payoutController.getCommis
  *       200:
  *         description: Paginated payout list
  *       403:
- *         description: Forbidden — payment_manager only
+ *         description: Forbidden — accountant only
  */
-router.get('/', auth, role('payment_manager'), payoutController.getAllPayouts);
+router.get('/', auth, role('accountant'), payoutController.getAllPayouts);
 
 /**
  * @swagger
  * /api/payouts/host/{host_id}:
  *   get:
- *     summary: Get payouts for a specific host (payment_manager only)
+ *     summary: Get payouts for a specific host (accountant only)
  *     tags: [Payouts]
  *     security:
  *       - BearerAuth: []
@@ -77,15 +77,15 @@ router.get('/', auth, role('payment_manager'), payoutController.getAllPayouts);
  *       200:
  *         description: Payout list for the host
  *       403:
- *         description: Forbidden — payment_manager only
+ *         description: Forbidden — accountant only
  */
-router.get('/host/:host_id', auth, role('payment_manager'), payoutController.getPayoutsByHost);
+router.get('/host/:host_id', auth, role('accountant'), payoutController.getPayoutsByHost);
 
 /**
  * @swagger
  * /api/payouts/generate/{booking_id}:
  *   post:
- *     summary: Generate a payout record from a completed booking (payment_manager only)
+ *     summary: Generate a payout record from a completed booking (accountant only)
  *     tags: [Payouts]
  *     security:
  *       - BearerAuth: []
@@ -100,15 +100,15 @@ router.get('/host/:host_id', auth, role('payment_manager'), payoutController.get
  *       400:
  *         description: Booking not completed or payout already exists
  *       403:
- *         description: Forbidden — payment_manager only
+ *         description: Forbidden — accountant only
  */
-router.post('/generate/:booking_id', auth, role('payment_manager'), payoutController.generatePayout);
+router.post('/generate/:booking_id', auth, role('accountant'), payoutController.generatePayout);
 
 /**
  * @swagger
  * /api/payouts/process/{payout_id}:
  *   post:
- *     summary: Process (approve and send) a payout to host (payment_manager only)
+ *     summary: Process (approve and send) a payout to host (accountant only)
  *     tags: [Payouts]
  *     security:
  *       - BearerAuth: []
@@ -123,8 +123,8 @@ router.post('/generate/:booking_id', auth, role('payment_manager'), payoutContro
  *       400:
  *         description: Payout already processed
  *       403:
- *         description: Forbidden — payment_manager only
+ *         description: Forbidden — accountant only
  */
-router.post('/process/:payout_id', auth, role('payment_manager'), payoutController.processPayout);
+router.post('/process/:payout_id', auth, role('accountant'), payoutController.processPayout);
 
 module.exports = router;

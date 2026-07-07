@@ -196,7 +196,7 @@ router.post('/disputes', auth, role('guest'), pc.raiseDispute);
  * @swagger
  * /api/payments/disputes:
  *   get:
- *     summary: Get all disputes (payment_manager only)
+ *     summary: Get all disputes (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -204,15 +204,15 @@ router.post('/disputes', auth, role('guest'), pc.raiseDispute);
  *       200:
  *         description: List of all disputes
  *       403:
- *         description: Forbidden — payment_manager only
+ *         description: Forbidden — accountant only
  */
-router.get('/disputes', auth, role('payment_manager'), pc.getAllDisputes);
+router.get('/disputes', auth, role('accountant'), pc.getAllDisputes);
 
 /**
  * @swagger
  * /api/payments/disputes/{id}/resolve:
  *   put:
- *     summary: Resolve a dispute (payment_manager only)
+ *     summary: Resolve a dispute (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -235,15 +235,15 @@ router.get('/disputes', auth, role('payment_manager'), pc.getAllDisputes);
  *       200:
  *         description: Dispute resolved
  */
-router.put('/disputes/:id/resolve', auth, role('payment_manager'), pc.resolveDispute);
+router.put('/disputes/:id/resolve', auth, role('accountant'), pc.resolveDispute);
 
-// ── Payment Manager routes ──────────────────────────────────────────────────
+// ── Accountant routes ──────────────────────────────────────────────────
 
 /**
  * @swagger
  * /api/payments/failed:
  *   get:
- *     summary: Get all failed payments (payment_manager only)
+ *     summary: Get all failed payments (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -251,13 +251,13 @@ router.put('/disputes/:id/resolve', auth, role('payment_manager'), pc.resolveDis
  *       200:
  *         description: List of failed payments
  */
-router.get('/failed', auth, role('payment_manager'), pc.getFailedPayments);
+router.get('/failed', auth, role('accountant'), pc.getFailedPayments);
 
 /**
  * @swagger
  * /api/payments/pending:
  *   get:
- *     summary: Get all pending payments (payment_manager only)
+ *     summary: Get all pending payments (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -265,13 +265,13 @@ router.get('/failed', auth, role('payment_manager'), pc.getFailedPayments);
  *       200:
  *         description: List of pending payments
  */
-router.get('/pending', auth, role('payment_manager'), pc.getPendingPayments);
+router.get('/pending', auth, role('accountant'), pc.getPendingPayments);
 
 /**
  * @swagger
  * /api/payments:
  *   get:
- *     summary: Get all payments (payment_manager only)
+ *     summary: Get all payments (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -279,13 +279,13 @@ router.get('/pending', auth, role('payment_manager'), pc.getPendingPayments);
  *       200:
  *         description: List of all payments
  */
-router.get('/', auth, role('payment_manager'), pc.getAllPayments);
+router.get('/', auth, role('accountant'), pc.getAllPayments);
 
 /**
  * @swagger
  * /api/payments/report:
  *   get:
- *     summary: Generate payment report (payment_manager only)
+ *     summary: Generate payment report (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -293,13 +293,13 @@ router.get('/', auth, role('payment_manager'), pc.getAllPayments);
  *       200:
  *         description: Payment report data
  */
-router.get('/report', auth, role('payment_manager'), pc.generateReport);
+router.get('/report', auth, role('accountant'), pc.generateReport);
 
 /**
  * @swagger
  * /api/payments/refund/{booking_id}:
  *   post:
- *     summary: Issue a full refund for a booking (payment_manager only)
+ *     summary: Issue a full refund for a booking (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -319,13 +319,13 @@ router.get('/report', auth, role('payment_manager'), pc.generateReport);
  *       200:
  *         description: Refund issued
  */
-router.post('/refund/:booking_id', auth, role('payment_manager'), refundValidator, validate, pc.refundPayment);
+router.post('/refund/:booking_id', auth, role('accountant'), refundValidator, validate, pc.refundPayment);
 
 /**
  * @swagger
  * /api/payments/refund/{booking_id}/partial:
  *   post:
- *     summary: Issue a partial refund (payment_manager only)
+ *     summary: Issue a partial refund (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -348,13 +348,13 @@ router.post('/refund/:booking_id', auth, role('payment_manager'), refundValidato
  *       200:
  *         description: Partial refund issued
  */
-router.post('/refund/:booking_id/partial', auth, role('payment_manager'), pc.partialRefund);
+router.post('/refund/:booking_id/partial', auth, role('accountant'), pc.partialRefund);
 
 /**
  * @swagger
  * /api/payments/status/{payment_id}:
  *   put:
- *     summary: Manually update payment status (payment_manager only)
+ *     summary: Manually update payment status (accountant only)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -376,15 +376,15 @@ router.post('/refund/:booking_id/partial', auth, role('payment_manager'), pc.par
  *       200:
  *         description: Status updated
  */
-router.put('/status/:payment_id', auth, role('payment_manager'), pc.updatePaymentStatus);
+router.put('/status/:payment_id', auth, role('accountant'), pc.updatePaymentStatus);
 
-// ── Payment Manager report sub-routes ──────────────────────────────────────
+// ── Accountant report sub-routes ──────────────────────────────────────
 
 /**
  * @swagger
  * /api/payments/reports/monthly:
  *   get:
- *     summary: Monthly revenue report (payment_manager only)
+ *     summary: Monthly revenue report (admin & accountant)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -392,13 +392,13 @@ router.put('/status/:payment_id', auth, role('payment_manager'), pc.updatePaymen
  *       200:
  *         description: Monthly revenue data
  */
-router.get('/reports/monthly', auth, role('payment_manager'), rc.monthlyRevenueReport);
+router.get('/reports/monthly', auth, role('admin', 'accountant'), rc.monthlyRevenueReport);
 
 /**
  * @swagger
  * /api/payments/reports/by-property:
  *   get:
- *     summary: Revenue breakdown by property (payment_manager only)
+ *     summary: Revenue breakdown by property (admin & accountant)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -406,13 +406,13 @@ router.get('/reports/monthly', auth, role('payment_manager'), rc.monthlyRevenueR
  *       200:
  *         description: Revenue per property
  */
-router.get('/reports/by-property', auth, role('payment_manager'), rc.revenueByPropertyReport);
+router.get('/reports/by-property', auth, role('admin', 'accountant'), rc.revenueByPropertyReport);
 
 /**
  * @swagger
  * /api/payments/reports/by-date:
  *   get:
- *     summary: Revenue breakdown by date range (payment_manager only)
+ *     summary: Revenue breakdown by date range (admin & accountant)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -427,13 +427,13 @@ router.get('/reports/by-property', auth, role('payment_manager'), rc.revenueByPr
  *       200:
  *         description: Revenue by date
  */
-router.get('/reports/by-date', auth, role('payment_manager'), rc.revenueByDateReport);
+router.get('/reports/by-date', auth, role('admin', 'accountant'), rc.revenueByDateReport);
 
 /**
  * @swagger
  * /api/payments/reports/refunds:
  *   get:
- *     summary: Refund activity report (payment_manager only)
+ *     summary: Refund activity report (admin & accountant)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -441,13 +441,13 @@ router.get('/reports/by-date', auth, role('payment_manager'), rc.revenueByDateRe
  *       200:
  *         description: Refund data
  */
-router.get('/reports/refunds', auth, role('payment_manager'), rc.refundsReport);
+router.get('/reports/refunds', auth, role('admin', 'accountant'), rc.refundsReport);
 
 /**
  * @swagger
  * /api/payments/reports/host-payouts:
  *   get:
- *     summary: Host payout report (payment_manager only)
+ *     summary: Host payout report (admin & accountant)
  *     tags: [Payments]
  *     security:
  *       - BearerAuth: []
@@ -455,6 +455,6 @@ router.get('/reports/refunds', auth, role('payment_manager'), rc.refundsReport);
  *       200:
  *         description: Host payout history
  */
-router.get('/reports/host-payouts', auth, role('payment_manager'), rc.hostPayoutsReport);
+router.get('/reports/host-payouts', auth, role('admin', 'accountant'), rc.hostPayoutsReport);
 
 module.exports = router;

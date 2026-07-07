@@ -73,7 +73,14 @@ export default function GuestReviews() {
       }
       resetForm();
       load();
-    } catch (err) { setMsg(err.response?.data?.message || 'Failed'); }
+    } catch (err) {
+      const data = err.response?.data;
+      if (data?.errors?.length) {
+        setMsg(data.errors.map(e => e.message).join(', '));
+      } else {
+        setMsg(data?.message || 'Failed');
+      }
+    }
   };
 
   const deleteReview = async (id) => {

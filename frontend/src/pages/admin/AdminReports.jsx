@@ -26,10 +26,10 @@ export default function AdminReports() {
       api.get('/payments/reports/refunds'),
       api.get('/payments/reports/host-payouts'),
     ]).then(([m, p, r, h]) => {
-      if (m.status === 'fulfilled') setMonthly(m.value.data || []);
-      if (p.status === 'fulfilled') setByProp(p.value.data || []);
-      if (r.status === 'fulfilled') setRefunds(r.value.data || []);
-      if (h.status === 'fulfilled') setHosts(h.value.data || []);
+      if (m.status === 'fulfilled') setMonthly(m.value.data?.data || m.value.data || []);
+      if (p.status === 'fulfilled') setByProp(p.value.data?.data || p.value.data || []);
+      if (r.status === 'fulfilled') setRefunds(r.value.data?.data || r.value.data || []);
+      if (h.status === 'fulfilled') setHosts(h.value.data?.data || h.value.data || []);
     }).finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -138,9 +138,11 @@ export default function AdminReports() {
           </div>
 
           {/* Host Payouts Table */}
-          {hosts.length > 0 && (
-            <div className="card" style={{ marginBottom: 20 }}>
-              <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Host Payout Report</h3>
+          <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Host Payout Report</h3>
+            {hosts.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No host payouts found.</div>
+            ) : (
               <div className="table-wrap">
                 <table>
                   <thead>
@@ -173,13 +175,15 @@ export default function AdminReports() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Refunds */}
-          {refunds.length > 0 && (
-            <div className="card" style={{ marginBottom: 20 }}>
-              <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Refund Activity</h3>
+          <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Refund Activity</h3>
+            {refunds.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No recent refunds.</div>
+            ) : (
               <div className="table-wrap">
                 <table>
                   <thead><tr><th>Booking</th><th>Amount</th><th>Date</th><th>Reason</th></tr></thead>
@@ -195,8 +199,8 @@ export default function AdminReports() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
 

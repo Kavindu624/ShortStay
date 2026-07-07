@@ -3,7 +3,12 @@ import { mockRequest } from './mockApi';
 
 const MOCK = import.meta.env.VITE_MOCK_MODE === 'true';
 
-const api = axios.create({ baseURL: 'http://localhost:5000/api' });
+const API_PORT = 5000;
+const baseURL = window.location.hostname === 'localhost' 
+  ? `http://localhost:${API_PORT}/api`
+  : `http://${window.location.hostname}:${API_PORT}/api`;
+
+const api = axios.create({ baseURL });
 
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token');
@@ -15,11 +20,11 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      const publicPaths = ['/login', '/register', '/forgot-password', '/verify-email', '/', '/about', '/contact'];
       const currentPath = window.location.pathname;
-      const isAlreadyOnPublic = publicPaths.some(p => currentPath === p || currentPath.startsWith('/auth'));
+      const publicPrefixes = ['/login', '/register', '/forgot-password', '/verify-email', '/auth', '/browse', '/property', '/about', '/contact'];
+      const isPublic = currentPath === '/' || publicPrefixes.some(p => currentPath === p || currentPath.startsWith(p + '/') || currentPath.startsWith(p));
       // Don't redirect if we're already on a public page (avoid redirect loop)
-      if (!isAlreadyOnPublic) {
+      if (!isPublic) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';

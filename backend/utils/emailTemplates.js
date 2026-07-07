@@ -377,7 +377,7 @@ exports.inspectionScheduledEmail = (hostName, propertyTitle, scheduledDate) => `
     <div style="background: #f8f8f8; padding: 20px;">
       <h3>Inspection Scheduled 📅</h3>
       <p>Dear <strong>${hostName}</strong>,</p>
-      <p>A field inspector has been assigned to verify your property.</p>
+      <p>A verifier has been assigned to verify your property.</p>
       <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
         <p><strong>Property:</strong> ${propertyTitle}</p>
         ${scheduledDate ? `<p><strong>Scheduled Date:</strong> ${scheduledDate}</p>` : '<p><strong>Schedule:</strong> The inspector will contact you to arrange a convenient time.</p>'}

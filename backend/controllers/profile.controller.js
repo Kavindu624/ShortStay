@@ -45,7 +45,7 @@ exports.getProfile = async (req, res) => {
       );
       roleData = hostData[0] || {};
 
-    } else if (['admin', 'payment_manager', 'field_inspector'].includes(user.role)) {
+    } else if (['admin', 'accountant', 'verifier'].includes(user.role)) {
       const [staffData] = await sequelize.query(
         'SELECT hire_date, role, department, area_assigned, transaction_limit, employee_code FROM staff WHERE user_id = ?',
         { replacements: [user.user_id] }
@@ -282,7 +282,7 @@ exports.getUserProfile = async (req, res) => {
       );
       roleData = hostData[0] || {};
 
-    } else if (['admin', 'payment_manager', 'field_inspector'].includes(user.role)) {
+    } else if (['admin', 'accountant', 'verifier'].includes(user.role)) {
       const [staffData] = await sequelize.query(
         'SELECT hire_date, role FROM staff WHERE user_id = ?',
         { replacements: [user.user_id] }
@@ -315,6 +315,29 @@ exports.deleteAccount = async (req, res) => {
 
     // Capture details before deletion
     const { name, email } = user;
+
+    // Prevent deletion if the user has active bookings as a guest
+    const [activeGuest] = await sequelize.query(
+      `SELECT count(*) as count FROM booking WHERE guest_id = ? AND status IN ('pending', 'approved', 'confirmed')`,
+      { replacements: [user.user_id] }
+    );
+    if (activeGuest[0].count > 0) {
+      return res.status(400).json({ message: 'Cannot delete account. You have active or upcoming bookings.' });
+    }
+
+    // Prevent deletion if the user is a host with active bookings on their properties
+    if (user.role === 'host') {
+      const [activeHost] = await sequelize.query(
+        `SELECT count(b.booking_id) as count 
+         FROM booking b 
+         JOIN property p ON b.property_id = p.property_id 
+         WHERE p.host_id = ? AND b.status IN ('pending', 'approved', 'confirmed')`,
+        { replacements: [user.user_id] }
+      );
+      if (activeHost[0].count > 0) {
+        return res.status(400).json({ message: 'Cannot delete account. Your properties have active bookings.' });
+      }
+    }
 
     // Delete profile picture file if present
     if (user.profile_picture) {

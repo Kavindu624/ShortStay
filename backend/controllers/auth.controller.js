@@ -172,6 +172,22 @@ exports.verifyEmail = async (req, res) => {
 };
 
 // ─────────────────────────────────────────
+// CHECK VERIFICATION STATUS (POLLING)
+// ─────────────────────────────────────────
+exports.checkVerification = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ isVerified: user.is_verified });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ─────────────────────────────────────────
 // RESEND VERIFICATION EMAIL
 // ─────────────────────────────────────────
 exports.resendVerification = async (req, res) => {
@@ -304,7 +320,7 @@ exports.login = async (req, res) => {
         { replacements: [user.user_id] }
       );
       roleData = hostData[0] || {};
-    } else if (['admin', 'payment_manager', 'field_inspector'].includes(user.role)) {
+    } else if (['admin', 'accountant', 'verifier'].includes(user.role)) {
       const [staffData] = await sequelize.query(
         'SELECT hire_date, role FROM staff WHERE user_id = ?',
         { replacements: [user.user_id] }
@@ -608,10 +624,38 @@ exports.changePassword = async (req, res) => {
 // ─────────────────────────────────────────
 exports.deleteAccount = async (req, res) => {
   try {
+    const { Booking, Property } = require('../models/index');
     const user = await User.findByPk(req.user.user_id);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role === 'guest') {
+      const activeBookings = await Booking.count({
+        where: {
+          guest_id: user.user_id,
+          status: ['pending', 'approved', 'confirmed']
+        }
+      });
+      if (activeBookings > 0) {
+        return res.status(400).json({ message: 'You cannot delete your account while you have active bookings. Please cancel them first.' });
+      }
+    } else if (user.role === 'host') {
+      const properties = await Property.findAll({ where: { host_id: user.user_id } });
+      const propertyIds = properties.map(p => p.property_id);
+      
+      if (propertyIds.length > 0) {
+        const activeBookings = await Booking.count({
+          where: {
+            property_id: propertyIds,
+            status: ['pending', 'approved', 'confirmed']
+          }
+        });
+        if (activeBookings > 0) {
+          return res.status(400).json({ message: 'You cannot delete your account while your properties have active bookings. Please manage them first.' });
+        }
+      }
     }
 
     await user.destroy();
@@ -635,11 +679,15 @@ exports.createStaff = async (req, res) => {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    if (!['admin', 'payment_manager', 'field_inspector'].includes(role)) {
+    if (!['admin', 'accountant', 'verifier'].includes(role)) {
       return res.status(400).json({ message: 'Invalid staff role' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate email verification token
+    const verificationToken         = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpires  = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     const result = await sequelize.transaction(async (t) => {
       const user = await User.create({
@@ -648,7 +696,9 @@ exports.createStaff = async (req, res) => {
         phone,
         password:    hashedPassword,
         role,
-        is_verified: true, // Staff don't need email verification
+        is_verified: false,
+        verification_token:        verificationToken,
+        verification_token_expires: verificationTokenExpires,
       }, { transaction: t });
 
       await sequelize.query(
@@ -662,13 +712,22 @@ exports.createStaff = async (req, res) => {
       return user;
     });
 
+    // Send verification email
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    await sendEmail(
+      email,
+      'Verify Your Staff Account - ShortStay',
+      emailVerificationTemplate(name, verificationUrl)
+    );
+
     res.status(201).json({
-      message: 'Staff created successfully',
+      message: 'Staff created! An email has been sent to them for verification.',
       user: {
         user_id: result.user_id,
         name:    result.name,
         email:   result.email,
         role:    result.role,
+        is_verified: false,
       }
     });
   } catch (err) {

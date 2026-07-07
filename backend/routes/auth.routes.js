@@ -17,16 +17,27 @@ const jwt = require('jsonwebtoken');
 // ── Google OAuth Routes ───────────────────
 router.get('/google', (req, res, next) => {
   const role = req.query.role || 'guest';
-  passport.authenticate('google', { scope: ['profile', 'email'], state: role })(req, res, next);
+  const action = req.query.action || 'login';
+  const state = `${role}|${action}`;
+  passport.authenticate('google', { scope: ['profile', 'email'], state: state })(req, res, next);
 });
 
-router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL}/login?error=google_auth_failed` }), (req, res) => {
-  const token = jwt.sign(
-    { user_id: req.user.user_id, email: req.user.email, role: req.user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-  res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err, user, info) => {
+    if (err) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=Google_authentication_failed`);
+    }
+    if (!user) {
+      const msg = info && info.message ? info.message : 'Google_authentication_failed';
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=${msg}`);
+    }
+    const token = jwt.sign(
+      { user_id: user.user_id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
+  })(req, res, next);
 });
 
 // ── Public routes ──────────────────────────
@@ -110,6 +121,32 @@ router.post('/login', loginValidator, validate, authController.login);
  *         description: Invalid or expired token
  */
 router.get('/verify-email/:token', authController.verifyEmail);
+
+/**
+ * @swagger
+ * /api/auth/check-verification/{email}:
+ *   get:
+ *     summary: Check if an email is verified (for cross-device polling)
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema: { type: string }
+ *         description: Email address to check
+ *     responses:
+ *       200:
+ *         description: Verification status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 isVerified: { type: boolean }
+ *       404:
+ *         description: User not found
+ */
+router.get('/check-verification/:email', authController.checkVerification);
 
 /**
  * @swagger
@@ -334,7 +371,7 @@ router.get('/membership', auth, role('guest'), authController.getMembership);
  *               name:     { type: string, example: 'Staff Member' }
  *               email:    { type: string, format: email, example: 'staff@shortstay.com' }
  *               password: { type: string, format: password, example: 'Staff@123' }
- *               role:     { type: string, enum: [payment_manager, field_inspector], example: 'field_inspector' }
+ *               role:     { type: string, enum: [accountant, verifier], example: 'verifier' }
  *     responses:
  *       201:
  *         description: Staff account created

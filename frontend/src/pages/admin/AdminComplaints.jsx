@@ -6,8 +6,16 @@ export default function AdminComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [resolutionNote, setResolutionNote] = useState({});
   const [expanded, setExpanded] = useState(null);
+  const [filterPriority, setFilterPriority] = useState('all');
 
-  const load = () => { api.get('/complaints').then(r => setComplaints(r.data || [])).catch(() => {}); };
+  const load = () => { 
+    api.get('/complaints').then(r => {
+      const data = r.data || [];
+      const prioOrder = { high: 1, medium: 2, low: 3 };
+      data.sort((a, b) => (prioOrder[a.priority] || 4) - (prioOrder[b.priority] || 4));
+      setComplaints(data);
+    }).catch(() => {}); 
+  };
   useEffect(load, []);
 
   const update = async (id, status) => {
@@ -25,13 +33,41 @@ export default function AdminComplaints() {
   return (
     <DashboardLayout>
       <div className="page-header"><div className="page-title">Complaints</div><div className="page-subtitle">Manage guest complaints and resolutions</div></div>
+      
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        {[
+          { id: 'all', label: 'All' },
+          { id: 'high', label: 'High Priority' },
+          { id: 'medium', label: 'Medium Priority' },
+          { id: 'low', label: 'Low Priority' }
+        ].map(filter => (
+          <button
+            key={filter.id}
+            onClick={() => setFilterPriority(filter.id)}
+            style={{
+              padding: '8px 16px',
+              borderRadius: 20,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              border: filterPriority === filter.id ? '1px solid var(--primary)' : '1px solid #e5e7eb',
+              background: filterPriority === filter.id ? 'var(--primary)' : 'white',
+              color: filterPriority === filter.id ? 'white' : 'var(--text-main)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
       <div className="card">
         <div className="table-wrap">
           <table>
             <thead><tr><th>ID</th><th>Booking</th><th>Subject</th><th>Description</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
-              {complaints.length === 0 ? <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No complaints</td></tr>
-                : complaints.map(c => (
+              {complaints.filter(c => filterPriority === 'all' || c.priority === filterPriority).length === 0 ? <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No complaints</td></tr>
+                : complaints.filter(c => filterPriority === 'all' || c.priority === filterPriority).map(c => (
                   <>
                     <tr key={c.complaint_id}>
                       <td>#{c.complaint_id}</td>

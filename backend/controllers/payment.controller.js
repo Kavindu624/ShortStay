@@ -11,7 +11,7 @@
  *                   POST /stripe/confirm   — confirm after frontend card step
  *                   GET  /my-payments      — guest payment history
  *                   GET  /receipt/:booking_id
- *  Payment Manager: GET  /                 — all payments (filterable)
+ *  Accountant: GET  /                 — all payments (filterable)
  *                   GET  /report           — financial summary
  *                   POST /refund/:booking_id — process refund
  *                   PUT  /status/:payment_id — update payment status
@@ -46,7 +46,7 @@ exports.processPayment = async (req, res) => {
     const { booking_id } = req.body;
 
     const booking = await Booking.findByPk(booking_id, {
-      include: [{ model: Property, as: 'property', attributes: ['title', 'address'] }],
+      include: [{ model: Property, as: 'property', attributes: ['title', 'address', 'host_id'] }],
     });
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     if (booking.guest_id !== req.user.user_id)
@@ -54,9 +54,13 @@ exports.processPayment = async (req, res) => {
     if (booking.status !== 'approved')
       return res.status(400).json({ message: 'Payment can only be made for approved bookings' });
 
-    const existingPayment = await Payment.findOne({ where: { booking_id } });
-    if (existingPayment)
-      return res.status(400).json({ message: 'Already paid for this booking' });
+    const existingPayment = await Payment.findOne({ where: { booking_id, payment_status: 'completed' } });
+    if (existingPayment) {
+      if (booking.status === 'approved') {
+        await booking.update({ status: 'confirmed' });
+      }
+      return res.status(200).json({ message: 'Payment already processed successfully', payment: existingPayment });
+    }
 
     const payment = await Payment.create({
       booking_id,
@@ -87,7 +91,7 @@ exports.createPaymentIntent = async (req, res) => {
     const { booking_id } = req.body;
 
     const booking = await Booking.findByPk(booking_id, {
-      include: [{ model: Property, as: 'property', attributes: ['title', 'address'] }],
+      include: [{ model: Property, as: 'property', attributes: ['title', 'address', 'host_id'] }],
     });
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     if (booking.guest_id !== req.user.user_id)
@@ -98,7 +102,12 @@ exports.createPaymentIntent = async (req, res) => {
     const existing = await Payment.findOne({
       where: { booking_id, payment_status: 'completed' },
     });
-    if (existing) return res.status(400).json({ message: 'Booking already paid' });
+    if (existing) {
+      if (booking.status === 'approved') {
+        await booking.update({ status: 'confirmed' });
+      }
+      return res.status(400).json({ message: 'Booking already paid' });
+    }
 
     // Amount in cents (Stripe expects smallest currency unit)
     const amountCents = Math.round(parseFloat(booking.total_price) * 100);
@@ -150,7 +159,7 @@ exports.confirmStripePayment = async (req, res) => {
     const payment = await Payment.findByPk(payment_id, {
       include: [{
         model: Booking,
-        include: [{ model: Property, as: 'property', attributes: ['title', 'address'] }],
+        include: [{ model: Property, as: 'property', attributes: ['title', 'address', 'host_id'] }],
       }],
     });
     if (!payment) return res.status(404).json({ message: 'Payment record not found' });
@@ -204,7 +213,7 @@ exports.stripeWebhook = async (req, res) => {
         where: { transaction_id: intent.id },
         include: [{
           model: Booking,
-          include: [{ model: Property, as: 'property', attributes: ['title', 'address'] }],
+          include: [{ model: Property, as: 'property', attributes: ['title', 'address', 'host_id'] }],
         }],
       });
 
@@ -271,7 +280,7 @@ exports.stripeWebhook = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  REFUND PAYMENT
-//  POST /api/payments/refund/:booking_id   (Payment Manager only)
+//  POST /api/payments/refund/:booking_id   (Accountant only)
 //  Body: { reason }
 // ─────────────────────────────────────────────────────────────────────────────
 exports.refundPayment = async (req, res) => {
@@ -310,7 +319,7 @@ exports.refundPayment = async (req, res) => {
         refundTransactionId = refund.id;
       } catch (stripeErr) {
         console.error('[Refund] Stripe refund failed:', stripeErr.message);
-        // Continue and mark as refunded manually (payment manager decision)
+        // Continue and mark as refunded manually (accountant decision)
       }
     }
 
@@ -318,7 +327,7 @@ exports.refundPayment = async (req, res) => {
       payment_status:        'refunded',
       refunded_at:           new Date(),
       refund_transaction_id: refundTransactionId,
-      notes:                 reason || 'Refunded by payment manager',
+      notes:                 reason || 'Refunded by accountant',
     });
 
     // In-app + email notification to guest
@@ -360,7 +369,7 @@ exports.refundPayment = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  UPDATE PAYMENT STATUS (Payment Manager only)
+//  UPDATE PAYMENT STATUS (Accountant only)
 //  PUT /api/payments/status/:payment_id
 //  Body: { status, notes }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -495,7 +504,7 @@ exports.getReceipt = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  GET ALL PAYMENTS (Payment Manager — with filters + pagination)
+//  GET ALL PAYMENTS (Accountant — with filters + pagination)
 //  GET /api/payments?status=&method=&from=&to=&page=1&limit=20
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getAllPayments = async (req, res) => {
@@ -545,7 +554,7 @@ exports.getAllPayments = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  GENERATE FINANCIAL REPORT  (Payment Manager)
+//  GENERATE FINANCIAL REPORT  (Accountant)
 //  GET /api/payments/report
 // ─────────────────────────────────────────────────────────────────────────────
 exports.generateReport = async (req, res) => {
@@ -831,7 +840,7 @@ exports.retryPayment = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  GET FAILED / PENDING PAYMENTS (Payment Manager)
+//  GET FAILED / PENDING PAYMENTS (Accountant)
 //  GET /api/payments/failed   |   GET /api/payments/pending
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getFailedPayments = async (req, res) => {
@@ -885,8 +894,8 @@ exports.getPendingPayments = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 //  DISPUTES
 //  POST /api/payments/disputes            — raise dispute (Guest)
-//  GET  /api/payments/disputes            — all disputes (Payment Manager)
-//  PUT  /api/payments/disputes/:id/resolve — resolve dispute (Payment Manager)
+//  GET  /api/payments/disputes            — all disputes (Accountant)
+//  PUT  /api/payments/disputes/:id/resolve — resolve dispute (Accountant)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.raiseDispute = async (req, res) => {
   try {
@@ -905,9 +914,9 @@ exports.raiseDispute = async (req, res) => {
       reason,
     });
 
-    // Notify all admins & payment managers
+    // Notify all admins & accountants
     const managers = await User.findAll({
-      where: { role: ['admin', 'payment_manager'] },
+      where: { role: ['admin', 'accountant'] },
     });
     await Promise.all(managers.map(m =>
       notify(m.user_id, 'New Payment Dispute 🚨',

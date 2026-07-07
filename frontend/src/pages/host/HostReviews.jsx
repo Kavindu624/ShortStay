@@ -7,6 +7,8 @@ export default function HostReviews() {
   const [properties, setProperties] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
 
   useEffect(() => {
     // Manually load reviews for all properties since there's no dedicated aggregate endpoint
@@ -60,6 +62,18 @@ export default function HostReviews() {
       setReviews(reviews.map(r => r.review_id === reviewId ? { ...r, helpful_count: (r.helpful_count || 0) + 1 } : r));
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const submitReply = async (reviewId) => {
+    if (!replyText.trim()) return;
+    try {
+      await api.put(`/reviews/${reviewId}/respond`, { response: replyText });
+      setReviews(reviews.map(r => r.review_id === reviewId ? { ...r, host_response: replyText } : r));
+      setReplyingTo(null);
+      setReplyText('');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to submit reply');
     }
   };
 
@@ -136,6 +150,27 @@ export default function HostReviews() {
                             <button onClick={() => handleHelpful(r.review_id)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#1e3a8a', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
                               <ThumbsUp size={14} /> Helpful {r.helpful_count > 0 ? `(${r.helpful_count})` : ''}
                             </button>
+                            
+                            <div style={{ marginTop: 12 }}>
+                              {r.host_response ? (
+                                <div style={{ background: '#f0f7ff', borderRadius: 8, padding: '12px 16px', marginTop: 12 }}>
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', marginBottom: 4 }}>Your Response</div>
+                                  <p style={{ fontSize: 13, margin: 0, color: 'var(--text-main)', lineHeight: 1.5 }}>{r.host_response}</p>
+                                </div>
+                              ) : replyingTo === r.review_id ? (
+                                <div style={{ marginTop: 12 }}>
+                                  <textarea className="form-input" rows={3} value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Type your response to this review..." style={{ width: '100%', resize: 'vertical' }} />
+                                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                                    <button className="btn-primary btn-sm" onClick={() => submitReply(r.review_id)}>Submit Reply</button>
+                                    <button className="btn-outline btn-sm" onClick={() => { setReplyingTo(null); setReplyText(''); }}>Cancel</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button onClick={() => { setReplyingTo(r.review_id); setReplyText(''); }} style={{ background: 'none', border: 'none', color: '#10b981', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, marginTop: 8 }}>
+                                  Reply to Review
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>

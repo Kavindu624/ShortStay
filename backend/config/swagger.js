@@ -21,8 +21,8 @@ Authorization: Bearer <your_token>
 - **guest** — Can search properties, make bookings, write reviews, raise complaints
 - **host** — Can list/manage properties, manage bookings, receive payouts
 - **admin** — Full system access: user management, property approval, reports
-- **payment_manager** — Manages payments, refunds, disputes, payouts
-- **field_inspector** — Conducts property inspections and submits reports
+- **accountant** — Manages payments, refunds, disputes, payouts
+- **verifier** — Conducts property inspections and submits reports
 
 ### Google OAuth Flow
 1. Frontend redirects browser to \`GET /api/auth/google\`

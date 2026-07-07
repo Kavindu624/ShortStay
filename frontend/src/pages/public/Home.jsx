@@ -455,7 +455,7 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </a>
-                <a href="#demo" style={{
+                <a href="/browse" style={{
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
                   background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
                   border: '1px solid rgba(255,255,255,0.25)',
@@ -463,10 +463,9 @@ export default function Home() {
                   padding: '14px 28px', borderRadius: '12px',
                   textDecoration: 'none', transition: 'all 0.2s ease',
                 }}>
-                  Watch Demo
+                  Explore Listings
                   <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </a>
               </div>

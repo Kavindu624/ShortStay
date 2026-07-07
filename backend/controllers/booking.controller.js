@@ -321,6 +321,46 @@ exports.rejectBooking = async (req, res) => {
   }
 };
 
+// ─── COMPLETE BOOKING ────────────────────────────────────────────────────────
+exports.completeBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findByPk(req.params.id, {
+      include: [{ model: Property, as: 'property' }],
+    });
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+    if (booking.property.host_id !== req.user.user_id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({ message: `Cannot complete a booking with status: ${booking.status}. It must be 'confirmed'.` });
+    }
+
+    await booking.update({ status: 'completed' });
+
+    // Free up the dates so they are no longer marked as "Booked" on the calendar
+    await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);
+
+    // In-app notification for guest
+    await notify(
+      booking.guest_id,
+      'booking_completed',
+      'Booking Completed ✅',
+      `Your stay at "${booking.property.title}" is complete. We hope you had a great time! Please leave a review.`,
+      booking.booking_id
+    );
+
+    res.status(200).json({
+      message: 'Booking marked as completed',
+      booking,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 // ─── CANCEL BOOKING ──────────────────────────────────────────────────────────
 
 exports.cancelBooking = async (req, res) => {
@@ -345,7 +385,14 @@ exports.cancelBooking = async (req, res) => {
     const wasConfirmed = booking.status === 'confirmed';
 
     // Cancellation policy — calculate refund
-    const { refund_amount, refund_policy } = calcRefund(booking.checkin_date, booking.total_price);
+    let refund_amount = 0;
+    let refund_policy = 'no_payment_made';
+    
+    if (wasConfirmed) {
+      const calc = calcRefund(booking.checkin_date, booking.total_price);
+      refund_amount = calc.refund_amount;
+      refund_policy = calc.refund_policy;
+    }
 
     await booking.update({
       status: 'cancelled',
@@ -373,7 +420,7 @@ exports.cancelBooking = async (req, res) => {
       booking.guest_id,
       'booking_cancelled',
       'Booking Cancelled',
-      `Your booking for "${booking.property.title}" has been cancelled. Refund: $${refund_amount} (${refund_policy.replace('_', ' ')}).`,
+      `Your booking for "${booking.property.title}" has been cancelled.${wasConfirmed ? ` Refund: $${refund_amount} (${refund_policy.replace('_', ' ')}).` : ''}`,
       booking.booking_id
     );
 
@@ -402,7 +449,9 @@ exports.cancelBooking = async (req, res) => {
       booking,
       refund_policy,
       refund_amount,
-      refund_message: refund_policy === 'full'
+      refund_message: !wasConfirmed
+        ? 'Booking cancelled successfully. No refund is required as no payment was made.'
+        : refund_policy === 'full'
         ? `Full refund of $${refund_amount} will be processed.`
         : refund_policy === 'partial_50'
         ? `Partial refund of $${refund_amount} (50%) will be processed.`

@@ -7,12 +7,12 @@ import Home from './pages/public/Home';
 import About from './pages/public/About';
 import Contact from './pages/public/Contact';
 import PropertyDetail from './pages/public/PropertyDetail';
-import AccessPortal from './pages/public/AccessPortal';
 import Terms from './pages/public/Terms';
 
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetPassword from './pages/auth/ResetPassword';
 import VerifyEmail from './pages/auth/VerifyEmail';
 
 // Guest
@@ -49,11 +49,11 @@ import InspectorDashboard from './pages/inspector/InspectorDashboard';
 import InspectorPending from './pages/inspector/InspectorPending';
 import InspectorHistory from './pages/inspector/InspectorHistory';
 
-// Payment Manager
-import PMDashboard from './pages/payment_manager/PMDashboard';
-import PMPayments from './pages/payment_manager/PMPayments';
-import PMReports from './pages/payment_manager/PMReports';
-import PMPayouts from './pages/payment_manager/PMPayouts';
+// Accountant
+import PMDashboard from './pages/accountant/PMDashboard';
+import PMPayments from './pages/accountant/PMPayments';
+import PMReports from './pages/accountant/PMReports';
+import PMPayouts from './pages/accountant/PMPayouts';
 
 // Mock role switcher
 import RoleSwitcher from './components/RoleSwitcher';
@@ -72,7 +72,7 @@ function ProtectedRoute({ children, role }) {
 function RoleRedirect() {
   const { user } = useAuth();
   if (!user) return <Navigate to="/" replace />;
-  const home = { guest: '/guest/browse', host: '/host/listings', admin: '/admin/dashboard', field_inspector: '/inspector/inspections', payment_manager: '/pm/dashboard' };
+  const home = { guest: '/guest/browse', host: '/host/listings', admin: '/admin/dashboard', verifier: '/inspector/inspections', accountant: '/pm/dashboard' };
   return <Navigate to={home[user.role] || '/'} replace />;
 }
 
@@ -93,7 +93,7 @@ function OAuthCallback() {
       const userObj = { user_id: Number(userId), role, name };
       localStorage.setItem('user', JSON.stringify(userObj));
       // Hard reload so AuthContext picks up the new user from localStorage
-      const home = { guest: '/guest/browse', host: '/host/listings', admin: '/admin/dashboard', field_inspector: '/inspector/inspections', payment_manager: '/pm/dashboard' };
+      const home = { guest: '/guest/browse', host: '/host/listings', admin: '/admin/dashboard', verifier: '/inspector/inspections', accountant: '/pm/dashboard' };
       window.location.href = home[role] || '/';
     } else {
       navigate('/login?error=google_failed', { replace: true });
@@ -114,13 +114,17 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
-          <Route path="/access-portal" element={<AccessPortal />} />
           <Route path="/terms" element={<Terms />} />
+
+          {/* Public browse — no login required */}
+          <Route path="/browse" element={<BrowseListings publicMode />} />
+          <Route path="/browse/property/:id" element={<GuestPropertyDetail publicMode />} />
 
           {/* Auth */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
           {/* OAuth callback */}
@@ -162,18 +166,18 @@ export default function App() {
           <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute>} />
 
           {/* Inspector */}
-          <Route path="/inspector" element={<ProtectedRoute role="field_inspector"><InspectorDashboard /></ProtectedRoute>} />
-          <Route path="/inspector/inspections" element={<ProtectedRoute role="field_inspector"><InspectorDashboard /></ProtectedRoute>} />
-          <Route path="/inspector/pending" element={<ProtectedRoute role="field_inspector"><InspectorPending /></ProtectedRoute>} />
-          <Route path="/inspector/history" element={<ProtectedRoute role="field_inspector"><InspectorHistory /></ProtectedRoute>} />
-          <Route path="/inspector/settings" element={<ProtectedRoute role="field_inspector"><InspectorDashboard /></ProtectedRoute>} />
+          <Route path="/inspector" element={<ProtectedRoute role="verifier"><InspectorDashboard /></ProtectedRoute>} />
+          <Route path="/inspector/inspections" element={<ProtectedRoute role="verifier"><InspectorDashboard /></ProtectedRoute>} />
+          <Route path="/inspector/pending" element={<ProtectedRoute role="verifier"><InspectorPending /></ProtectedRoute>} />
+          <Route path="/inspector/history" element={<ProtectedRoute role="verifier"><InspectorHistory /></ProtectedRoute>} />
+          <Route path="/inspector/settings" element={<ProtectedRoute role="verifier"><InspectorDashboard /></ProtectedRoute>} />
 
-          {/* Payment Manager */}
-          <Route path="/pm/dashboard" element={<ProtectedRoute role="payment_manager"><PMDashboard /></ProtectedRoute>} />
-          <Route path="/pm/payouts" element={<ProtectedRoute role="payment_manager"><PMPayouts /></ProtectedRoute>} />
-          <Route path="/pm/payments" element={<ProtectedRoute role="payment_manager"><PMPayments /></ProtectedRoute>} />
-          <Route path="/pm/disputes" element={<ProtectedRoute role="payment_manager"><PMPayments /></ProtectedRoute>} />
-          <Route path="/pm/reports" element={<ProtectedRoute role="payment_manager"><PMReports /></ProtectedRoute>} />
+          {/* Accountant */}
+          <Route path="/pm/dashboard" element={<ProtectedRoute role="accountant"><PMDashboard /></ProtectedRoute>} />
+          <Route path="/pm/payouts" element={<ProtectedRoute role="accountant"><PMPayouts /></ProtectedRoute>} />
+          <Route path="/pm/payments" element={<ProtectedRoute role="accountant"><PMPayments /></ProtectedRoute>} />
+          <Route path="/pm/disputes" element={<ProtectedRoute role="accountant"><PMPayments /></ProtectedRoute>} />
+          <Route path="/pm/reports" element={<ProtectedRoute role="accountant"><PMReports /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

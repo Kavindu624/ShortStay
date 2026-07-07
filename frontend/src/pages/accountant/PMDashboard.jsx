@@ -31,7 +31,7 @@ export default function PMDashboard() {
   }, []);
 
   const totalEarnings = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
-  const pendingPayouts = stats?.pending_payouts ?? 0;
+  const pendingPayouts = stats?.pending_payouts?.count ?? 0;
   const processedPayouts = stats?.processed_payouts ?? 0;
 
   const resolveDispute = async (id) => {

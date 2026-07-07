@@ -61,15 +61,31 @@ export default function PublicNav() {
 
           {/* Nav links — perfectly centered */}
           <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center space-x-2">
-            <Link to="/" className={linkClass('/')}>Home</Link>
-            <Link to="/about" className={linkClass('/about')}>About</Link>
-            <Link to="/contact" className={linkClass('/contact')}>Contact</Link>
+            <Link to="/" onClick={() => window.scrollTo(0, 0)} className={linkClass('/')}>Home</Link>
+            <Link to="/about" onClick={() => window.scrollTo(0, 0)} className={linkClass('/about')}>About</Link>
+            <Link to="/contact" onClick={() => window.scrollTo(0, 0)} className={linkClass('/contact')}>Contact</Link>
           </div>
 
-          {/* Login button */}
-          <div className="hidden md:flex items-center z-10">
+          {/* Auth buttons */}
+          <div className="hidden md:flex items-center gap-4 z-10">
             <button
               onClick={() => nav('/login')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: scrolled ? '#1f2937' : '#ffffff',
+                fontWeight: '600',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                transition: 'color 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = scrolled ? '#2563eb' : '#93c5fd'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = scrolled ? '#1f2937' : '#ffffff'; }}
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => nav('/register')}
               style={{
                 background: scrolled
                   ? 'linear-gradient(135deg, #1e3a8a, #1d4ed8)'
@@ -95,7 +111,7 @@ export default function PublicNav() {
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              Log In
+              Sign Up
             </button>
           </div>
 

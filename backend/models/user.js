@@ -19,8 +19,8 @@ const User = sequelize.define('user', {
       'guest',
       'host',
       'admin',
-      'payment_manager',
-      'field_inspector'
+      'accountant',
+      'verifier'
     ) 
   },
   membership_level: {

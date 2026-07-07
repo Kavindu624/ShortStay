@@ -8,6 +8,7 @@ const statusBadge = { confirmed: 'badge-success', approved: 'badge-info', pendin
 export default function HostBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
   const [commissionRate, setCommissionRate] = useState(10); // default 10%
 
   const load = () => {
@@ -33,12 +34,19 @@ export default function HostBookings() {
     try { await api.put(`/bookings/${id}/reject`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
   };
 
+  const complete = async (id) => {
+    if (!confirm('Mark this booking as completed? (Only do this after the guest has checked out)')) return;
+    try { await api.put(`/bookings/${id}/complete`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+  };
+
   const stats = {
     total: bookings.length,
     confirmed: bookings.filter(b => b.status === 'confirmed').length,
     approved: bookings.filter(b => b.status === 'approved').length,
     pending: bookings.filter(b => b.status === 'pending').length,
-    completed: bookings.filter(b => b.status === 'completed').length
+    completed: bookings.filter(b => b.status === 'completed').length,
+    rejected: bookings.filter(b => b.status === 'rejected').length,
+    cancelled: bookings.filter(b => b.status === 'cancelled').length
   };
 
   const calculateNights = (checkin, checkout) => {
@@ -47,27 +55,41 @@ export default function HostBookings() {
     return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
   };
 
+  const filteredBookings = filter === 'all' ? bookings : bookings.filter(b => b.status === filter);
+
   return (
     <DashboardLayout>
       <div className="page-header"><div className="page-title">Bookings</div><div className="page-subtitle">Manage reservations for your properties</div></div>
       
       {!loading && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 24 }}>
-          <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+          <div className="card" onClick={() => setFilter('all')} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', border: filter === 'all' ? '2px solid var(--primary)' : '1px solid transparent', transition: 'all 0.2s' }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Total Bookings</div>
             <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text-main)' }}>{stats.total}</div>
           </div>
-          <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Confirmed</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#10b981' }}>{stats.confirmed}</div>
+          <div className="card" onClick={() => setFilter('pending')} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', border: filter === 'pending' ? '2px solid #f59e0b' : '1px solid transparent', transition: 'all 0.2s' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Pending</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#f59e0b' }}>{stats.pending}</div>
           </div>
-          <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="card" onClick={() => setFilter('approved')} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', border: filter === 'approved' ? '2px solid #3b82f6' : '1px solid transparent', transition: 'all 0.2s' }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Approved (Unpaid)</div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#3b82f6' }}>{stats.approved}</div>
           </div>
-          <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="card" onClick={() => setFilter('confirmed')} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', border: filter === 'confirmed' ? '2px solid #10b981' : '1px solid transparent', transition: 'all 0.2s' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Confirmed (Paid)</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#10b981' }}>{stats.confirmed}</div>
+          </div>
+          <div className="card" onClick={() => setFilter('completed')} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', border: filter === 'completed' ? '2px solid #6366f1' : '1px solid transparent', transition: 'all 0.2s' }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Completed</div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#6366f1' }}>{stats.completed}</div>
+          </div>
+          <div className="card" onClick={() => setFilter('rejected')} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', border: filter === 'rejected' ? '2px solid #ef4444' : '1px solid transparent', transition: 'all 0.2s' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Rejected</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>{stats.rejected}</div>
+          </div>
+          <div className="card" onClick={() => setFilter('cancelled')} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 8, cursor: 'pointer', border: filter === 'cancelled' ? '2px solid #6b7280' : '1px solid transparent', transition: 'all 0.2s' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}>Cancelled</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#6b7280' }}>{stats.cancelled}</div>
           </div>
         </div>
       )}
@@ -79,12 +101,16 @@ export default function HostBookings() {
           </div>
         ) : (
           <div className="card">
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 16 }}>All Bookings</div>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 16 }}>
+              {filter === 'all' ? 'All Bookings' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Bookings`}
+            </div>
             <div className="table-wrap">
               <table>
-                <thead><tr><th style={{ width: '5%' }}>Booking ID</th><th>Guest</th><th>Property</th><th style={{ whiteSpace: 'nowrap' }}>Check-in</th><th style={{ whiteSpace: 'nowrap' }}>Check-out</th><th>Nights</th><th>Your Earning</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th style={{ width: '5%' }}>ID</th><th>Guest</th><th>Property</th><th style={{ whiteSpace: 'nowrap' }}>Dates</th><th>Nights</th><th>Earnings</th><th>Status</th><th>Actions</th></tr></thead>
                 <tbody>
-                  {bookings.map(b => {
+                  {filteredBookings.length === 0 ? (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>No {filter !== 'all' ? filter : ''} bookings found.</td></tr>
+                  ) : filteredBookings.map(b => {
                     const isCancelledOrRejected = b.status === 'cancelled' || b.status === 'rejected';
                     const total = isCancelledOrRejected ? 0 : Number(b.total_price);
                     const fee = total * (commissionRate / 100);
@@ -97,10 +123,12 @@ export default function HostBookings() {
                           <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{b.guest?.email || 'N/A'}</div>
                         </td>
                         <td>{b.property?.title || `Property #${b.property_id}`}</td>
-                        <td style={{ whiteSpace: 'nowrap' }}>{b.checkin_date}</td>
-                        <td style={{ whiteSpace: 'nowrap' }}>{b.checkout_date}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ fontSize: 13, color: 'var(--text-main)', marginBottom: 2 }}>In: {b.checkin_date}</div>
+                          <div style={{ fontSize: 13, color: 'var(--text-main)' }}>Out: {b.checkout_date}</div>
+                        </td>
                         <td>{calculateNights(b.checkin_date, b.checkout_date)}</td>
-                        <td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
                           <div style={{ fontWeight: 600, color: isCancelledOrRejected ? 'var(--text-muted)' : '#10b981', marginBottom: 2, textDecoration: isCancelledOrRejected ? 'line-through' : 'none' }}>
                             {earning.toLocaleString()} LKR
                           </div>
@@ -109,8 +137,9 @@ export default function HostBookings() {
                         <td><span className={`badge ${statusBadge[b.status] || 'badge-gray'}`}>{b.status}</span></td>
                         <td>
                           <div style={{ display: 'flex', gap: 6 }}>
-                            {b.status === 'pending' && <button className="btn-success btn-sm" onClick={() => approve(b.booking_id)}>Approve</button>}
-                            {b.status === 'pending' && <button className="btn-danger btn-sm" onClick={() => reject(b.booking_id)}>Reject</button>}
+                            {b.status === 'pending' && <button className="btn-success btn-sm" onClick={() => approve(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Approve</button>}
+                            {b.status === 'pending' && <button className="btn-danger btn-sm" onClick={() => reject(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Reject</button>}
+                            {b.status === 'confirmed' && <button className="btn-primary btn-sm" onClick={() => complete(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Mark Completed</button>}
                           </div>
                         </td>
                       </tr>

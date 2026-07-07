@@ -33,8 +33,14 @@ passport.use(new GoogleStrategy({
         return done(null, user);
       }
 
-      // Get role from state, default to guest
-      const requestedRole = req.query.state === 'host' ? 'host' : 'guest';
+      // Get role and action from state
+      const stateParts = (req.query.state || '').split('|');
+      const requestedRole = stateParts[0] === 'host' ? 'host' : 'guest';
+      const action = stateParts[1] || 'login';
+
+      if (action === 'login') {
+        return done(null, false, { message: 'Account_not_found._Please_register_first.' });
+      }
 
       // Create new user
       const result = await sequelize.transaction(async (t) => {

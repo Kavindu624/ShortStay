@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 /**
- * Payout model — tracks host payouts by the payment manager
+ * Payout model — tracks host payouts by the accountant
  *
  * Commission flow:
  *   booking.total_price  → guest pays this
@@ -69,7 +69,7 @@ const Payout = sequelize.define('payout', {
     type: DataTypes.INTEGER,
     allowNull: true,
     defaultValue: null,
-    comment: 'user_id of the payment_manager who processed this',
+    comment: 'user_id of the accountant who processed this',
   },
   notes: {
     type: DataTypes.STRING(500),

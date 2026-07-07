@@ -9,9 +9,17 @@ export default function VerifyEmail() {
   const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
   const [message, setMessage] = useState('');
   const hasCalled = useRef(false);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (hasCalled.current) return;
+    hasCalled.current = true;
     const token = searchParams.get('token');
     if (!token) {
       setStatus('error');
@@ -21,13 +29,14 @@ export default function VerifyEmail() {
     api.get(`/auth/verify-email/${token}`)
       .then(res => {
         setStatus('success');
-        setMessage(res.data?.message || 'Your email has been verified successfully!');
+        setMessage(res.data?.message || 'Your email has been verified successfully! Redirecting to login...');
+        timeoutRef.current = setTimeout(() => navigate('/login'), 3000);
       })
       .catch(err => {
         setStatus('error');
         setMessage(err.response?.data?.message || 'The verification link is invalid or has expired.');
       });
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f6fa', display: 'flex', flexDirection: 'column' }}>
@@ -56,6 +65,9 @@ export default function VerifyEmail() {
               </div>
               <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: '#065f46' }}>Email Verified!</h2>
               <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 14, lineHeight: 1.6 }}>{message}</p>
+              <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 13, lineHeight: 1.6 }}>
+                <strong>Note:</strong> If you are verifying from a mobile phone, you can safely close this tab and return to your desktop.
+              </p>
               <Link to="/login">
                 <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '12px 20px' }}>
                   Continue to Login

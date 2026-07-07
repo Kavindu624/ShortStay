@@ -405,7 +405,7 @@ router.delete('/:id/cancel-verification',
  * @swagger
  * /api/properties/{id}/verification-status:
  *   put:
- *     summary: Update verification status (admin or field_inspector only)
+ *     summary: Update verification status (admin or verifier only)
  *     tags: [Properties]
  *     security:
  *       - BearerAuth: []
@@ -431,7 +431,7 @@ router.delete('/:id/cancel-verification',
  *         description: Forbidden
  */
 router.put('/:id/verification-status',
-  auth, role('admin', 'field_inspector'),
+  auth, role('admin', 'verifier'),
   propertyController.updateVerificationStatus
 );
 

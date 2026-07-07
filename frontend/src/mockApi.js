@@ -89,7 +89,7 @@ export async function mockRequest(method, url, body) {
   // InspectorDashboard: setInspections(r.data || []) → need array
   if (url === '/inspector' || url.startsWith('/inspector')) return ok(MOCK_INSPECTIONS);
 
-  // ── Payment Manager ───────────────────────────────────────────────────────
+  // ── Accountant ───────────────────────────────────────────────────────
   if (url === '/pm/dashboard')        return ok({ totalPayments: 312, totalRevenue: 4850000, pendingPayouts: 8, completedPayouts: 45 });
   if (url.startsWith('/pm/payments')) return ok(MOCK_PAYMENTS);
   if (url.startsWith('/pm/payouts'))  return ok([]);

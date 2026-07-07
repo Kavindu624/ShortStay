@@ -11,7 +11,7 @@ exports.registerValidator = [
     .isEmail().withMessage('Please provide a valid email'),
 
   body('phone')
-    .notEmpty().withMessage('Phone is required')
+    .optional({ checkFalsy: true })
     .isMobilePhone().withMessage('Please provide a valid phone number'),
 
   body('password')
@@ -104,7 +104,7 @@ exports.createReviewValidator = [
 
   body('comment')
     .notEmpty().withMessage('Comment is required')
-    .isLength({ min: 5 }).withMessage('Comment must be at least 5 characters'),
+    .isLength({ min: 2 }).withMessage('Comment must be at least 2 characters'),
 ];
 
 // COMPLAINT VALIDATORS
@@ -170,6 +170,6 @@ exports.createStaffValidator = [
 
   body('role')
     .notEmpty().withMessage('Role is required')
-    .isIn(['admin', 'payment_manager', 'field_inspector'])
+    .isIn(['admin', 'accountant', 'verifier'])
     .withMessage('Invalid staff role'),
 ];

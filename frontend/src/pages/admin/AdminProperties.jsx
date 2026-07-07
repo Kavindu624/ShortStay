@@ -28,10 +28,10 @@ export default function AdminProperties() {
   };
   useEffect(() => {
     load();
-    // Load list of field inspectors for assignment dropdown
-    api.get('/admin/users?role=field_inspector').then(r => {
+    // Load list of verifiers for assignment dropdown
+    api.get('/admin/users?role=verifier').then(r => {
       const users = r.data?.users || r.data || [];
-      setInspectors(users.filter(u => u.role === 'field_inspector'));
+      setInspectors(users.filter(u => u.role === 'verifier'));
     }).catch(() => {});
   }, []);
 
@@ -89,7 +89,7 @@ export default function AdminProperties() {
             <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>{properties.find(p => p.property_id === assignModal)?.title || `Property #${assignModal}`}</p>
             {assignMsg && <div className={`alert ${assignMsg.includes('successfully') ? 'alert-success' : 'alert-error'}`}>{assignMsg}</div>}
             <div className="form-group">
-              <label className="form-label">Select Field Inspector</label>
+              <label className="form-label">Select Verifier</label>
               <select className="form-input" value={selectedInspector} onChange={e => setSelectedInspector(e.target.value)}>
                 <option value="">-- Choose inspector --</option>
                 {inspectors.map(i => <option key={i.user_id} value={i.user_id}>{i.name} ({i.email})</option>)}

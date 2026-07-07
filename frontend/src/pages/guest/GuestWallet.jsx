@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { Download, CreditCard, RefreshCw, FileText, X } from 'lucide-react';
 
 export default function GuestWallet() {
+  const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [receipt, setReceipt] = useState(null);
@@ -138,7 +140,7 @@ export default function GuestWallet() {
       <div className="card" style={{ marginTop: 16 }}>
         <h4 style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: 6 }}>About Refunds</h4>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Refunds are processed to your original payment method within 5-7 business days. Contact support if you have issues with a refund.</p>
-        <button className="btn-primary btn-sm">Contact Support</button>
+        <button className="btn-primary btn-sm" onClick={() => navigate('/guest/complaints')}>Contact Support</button>
       </div>
     </DashboardLayout>
   );

@@ -56,7 +56,7 @@ router.get('/admin', auth, role('admin'), dashboardController.adminDashboard);
  * @swagger
  * /api/dashboard/payment-manager:
  *   get:
- *     summary: Get payment manager dashboard (payments, disputes, payouts)
+ *     summary: Get accountant dashboard (payments, disputes, payouts)
  *     tags: [Dashboard]
  *     security:
  *       - BearerAuth: []
@@ -64,15 +64,15 @@ router.get('/admin', auth, role('admin'), dashboardController.adminDashboard);
  *       200:
  *         description: Payment manager dashboard data
  *       403:
- *         description: Forbidden — payment_manager only
+ *         description: Forbidden — accountant only
  */
-router.get('/payment-manager', auth, role('payment_manager'), dashboardController.paymentManagerDashboard);
+router.get('/payment-manager', auth, role('accountant'), dashboardController.paymentManagerDashboard);
 
 /**
  * @swagger
  * /api/dashboard/inspector:
  *   get:
- *     summary: Get field inspector dashboard (assigned inspections, completed count)
+ *     summary: Get verifier dashboard (assigned inspections, completed count)
  *     tags: [Dashboard]
  *     security:
  *       - BearerAuth: []
@@ -80,8 +80,8 @@ router.get('/payment-manager', auth, role('payment_manager'), dashboardControlle
  *       200:
  *         description: Inspector dashboard data
  *       403:
- *         description: Forbidden — field_inspector only
+ *         description: Forbidden — verifier only
  */
-router.get('/inspector', auth, role('field_inspector'), dashboardController.inspectorDashboard);
+router.get('/inspector', auth, role('verifier'), dashboardController.inspectorDashboard);
 
 module.exports = router;

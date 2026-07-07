@@ -67,7 +67,7 @@ ShortStay is designed to simplify the process of finding, booking, and managing 
 - Monitor system activity
 - Generate reports
 
-### Payment Manager
+### Accountant
 
 - Monitor transactions
 - Process guest payments
@@ -75,7 +75,7 @@ ShortStay is designed to simplify the process of finding, booking, and managing 
 - Handle refunds and cancellations
 - Generate financial reports
 
-### Field Inspector
+### Verifier
 
 - Verify properties
 - Conduct inspections

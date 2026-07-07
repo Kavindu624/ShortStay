@@ -5,8 +5,8 @@ export const MOCK_USERS = {
   admin:           { _id: 'u1', name: 'Admin User',     email: 'admin@shortstay.com',     role: 'admin',            avatar: null },
   guest:           { _id: 'u2', name: 'Guest User',     email: 'guest@shortstay.com',     role: 'guest',            avatar: null },
   host:            { _id: 'u3', name: 'Host User',      email: 'host@shortstay.com',      role: 'host',             avatar: null },
-  field_inspector: { _id: 'u4', name: 'Inspector User', email: 'inspector@shortstay.com', role: 'field_inspector',  avatar: null },
-  payment_manager: { _id: 'u5', name: 'PM User',        email: 'pm@shortstay.com',        role: 'payment_manager',  avatar: null },
+  verifier: { _id: 'u4', name: 'Inspector User', email: 'inspector@shortstay.com', role: 'verifier',  avatar: null },
+  accountant: { _id: 'u5', name: 'PM User',        email: 'pm@shortstay.com',        role: 'accountant',  avatar: null },
 };
 
 export const MOCK_PROPERTIES = [
@@ -116,8 +116,8 @@ export const MOCK_USERS_LIST = [
   { _id: 'u1', user_id: 1, name: 'Admin User',     email: 'admin@shortstay.com',     role: 'admin',            createdAt: '2024-01-01', status: 'active' },
   { _id: 'u2', user_id: 2, name: 'Guest User',     email: 'guest@shortstay.com',     role: 'guest',            createdAt: '2024-02-15', status: 'active' },
   { _id: 'u3', user_id: 3, name: 'Host User',      email: 'host@shortstay.com',      role: 'host',             createdAt: '2024-03-10', status: 'active' },
-  { _id: 'u4', user_id: 4, name: 'Inspector User', email: 'inspector@shortstay.com', role: 'field_inspector',  createdAt: '2024-04-01', status: 'active' },
-  { _id: 'u5', user_id: 5, name: 'PM User',        email: 'pm@shortstay.com',        role: 'payment_manager',  createdAt: '2024-04-05', status: 'active' },
+  { _id: 'u4', user_id: 4, name: 'Inspector User', email: 'inspector@shortstay.com', role: 'verifier',  createdAt: '2024-04-01', status: 'active' },
+  { _id: 'u5', user_id: 5, name: 'PM User',        email: 'pm@shortstay.com',        role: 'accountant',  createdAt: '2024-04-05', status: 'active' },
   { _id: 'u6', user_id: 6, name: 'Alice Smith',    email: 'alice@example.com',       role: 'guest',            createdAt: '2024-05-01', status: 'active' },
   { _id: 'u7', user_id: 7, name: 'Bob Jones',      email: 'bob@example.com',         role: 'host',             createdAt: '2024-05-15', status: 'suspended' },
 ];

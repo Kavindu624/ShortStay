@@ -1,5 +1,5 @@
 /**
- * Seed script — creates default admin, payment_manager, and field_inspector accounts.
+ * Seed script — creates default admin, accountant, and verifier accounts.
  * Run once with: node seed_staff.js
  */
 require('dotenv').config();
@@ -18,18 +18,18 @@ const accounts = [
     staff: { department: 'Administration', employee_code: 'ADM001', hire_date: new Date() },
   },
   {
-    name: 'Payment Manager',
+    name: 'Accountant',
     email: 'pm@shortstay.com',
     password: 'Pm@12345',
-    role: 'payment_manager',
+    role: 'accountant',
     is_verified: true,
     staff: { department: 'Finance', employee_code: 'PM001', hire_date: new Date(), transaction_limit: 100000 },
   },
   {
-    name: 'Field Inspector',
+    name: 'Verifier',
     email: 'inspector@shortstay.com',
     password: 'Inspector@123',
-    role: 'field_inspector',
+    role: 'verifier',
     is_verified: true,
     staff: { department: 'Operations', employee_code: 'FI001', hire_date: new Date(), area_assigned: 'Colombo' },
   },

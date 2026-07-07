@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../api';
 import DashboardLayout from '../../components/DashboardLayout';
 import { useAuth } from '../../AuthContext';
-import { User, Lock, Settings } from 'lucide-react';
+import { User, Lock, Settings, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminSettings() {
   const { user, updateUser } = useAuth();
@@ -12,6 +12,7 @@ export default function AdminSettings() {
   const [pwd, setPwd] = useState({ current_password: '', new_password: '', confirm: '' });
   const [msgProfile, setMsgProfile] = useState('');
   const [msgPwd, setMsgPwd] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
   const [settings, setSettings] = useState({
     commissionRate: '10',
     minCommission: '5',
@@ -83,7 +84,7 @@ export default function AdminSettings() {
     e.preventDefault(); setMsgPwd('');
     if (pwd.new_password !== pwd.confirm) { setMsgPwd('New passwords do not match'); return; }
     try {
-      await api.put('/auth/change-password', { current_password: pwd.current_password, new_password: pwd.new_password });
+      await api.put('/auth/change-password', { old_password: pwd.current_password, new_password: pwd.new_password });
       setMsgPwd('Password changed successfully!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setMsgPwd(''), 3000);
@@ -144,9 +145,33 @@ export default function AdminSettings() {
               <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}><Lock size={18} /> Change Password</h3>
               {msgPwd && <div className={`alert ${msgPwd.includes('successfully') ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: 16 }}>{msgPwd}</div>}
               <form onSubmit={changePwd}>
-                <div className="form-group"><label className="form-label">Current Password</label><input className="form-input" type="password" value={pwd.current_password} onChange={e => setPwd({ ...pwd, current_password: e.target.value })} required /></div>
-                <div className="form-group"><label className="form-label">New Password</label><input className="form-input" type="password" value={pwd.new_password} onChange={e => setPwd({ ...pwd, new_password: e.target.value })} required /></div>
-                <div className="form-group"><label className="form-label">Confirm New Password</label><input className="form-input" type="password" value={pwd.confirm} onChange={e => setPwd({ ...pwd, confirm: e.target.value })} required /></div>
+                <div className="form-group">
+                  <label className="form-label">Current Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input className="form-input" type={showPwd ? "text" : "password"} value={pwd.current_password} onChange={e => setPwd({ ...pwd, current_password: e.target.value })} required />
+                    <button type="button" onClick={() => setShowPwd(!showPwd)} style={{ position: 'absolute', right: 12, top: 10, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                      {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">New Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input className="form-input" type={showPwd ? "text" : "password"} value={pwd.new_password} onChange={e => setPwd({ ...pwd, new_password: e.target.value })} required />
+                    <button type="button" onClick={() => setShowPwd(!showPwd)} style={{ position: 'absolute', right: 12, top: 10, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                      {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Confirm New Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input className="form-input" type={showPwd ? "text" : "password"} value={pwd.confirm} onChange={e => setPwd({ ...pwd, confirm: e.target.value })} required />
+                    <button type="button" onClick={() => setShowPwd(!showPwd)} style={{ position: 'absolute', right: 12, top: 10, background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                      {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
                 <button className="btn-primary" type="submit">Change Password</button>
               </form>
             </div>

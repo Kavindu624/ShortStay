@@ -3,7 +3,7 @@
   "info": {
     "title": "ShortStay API",
     "version": "1.0.0",
-    "description": "\n## ShortStay Backend API\n\nA full-featured short-term property rental platform API.\n\n### Authentication\nMost endpoints require a JWT Bearer token. Include it in the `Authorization` header:\n```\nAuthorization: Bearer <your_token>\n```\n\n### Roles\n- **guest** — Can search properties, make bookings, write reviews, raise complaints\n- **host** — Can list/manage properties, manage bookings, receive payouts\n- **admin** — Full system access: user management, property approval, reports\n- **payment_manager** — Manages payments, refunds, disputes, payouts\n- **field_inspector** — Conducts property inspections and submits reports\n\n### Google OAuth Flow\n1. Frontend redirects browser to `GET /api/auth/google`\n2. After Google login, backend redirects to `{FRONTEND_URL}/auth/callback?token=...&role=...&user_id=...`\n3. Frontend stores the token from the URL query parameter\n      ",
+    "description": "\n## ShortStay Backend API\n\nA full-featured short-term property rental platform API.\n\n### Authentication\nMost endpoints require a JWT Bearer token. Include it in the `Authorization` header:\n```\nAuthorization: Bearer <your_token>\n```\n\n### Roles\n- **guest** — Can search properties, make bookings, write reviews, raise complaints\n- **host** — Can list/manage properties, manage bookings, receive payouts\n- **admin** — Full system access: user management, property approval, reports\n- **accountant** — Manages payments, refunds, disputes, payouts\n- **verifier** — Conducts property inspections and submits reports\n\n### Google OAuth Flow\n1. Frontend redirects browser to `GET /api/auth/google`\n2. After Google login, backend redirects to `{FRONTEND_URL}/auth/callback?token=...&role=...&user_id=...`\n3. Frontend stores the token from the URL query parameter\n      ",
     "contact": {
       "name": "ShortStay Team"
     }
@@ -1145,7 +1145,7 @@
     },
     "/api/properties/{id}/verification-status": {
       "put": {
-        "summary": "Update verification status (admin or field_inspector only)",
+        "summary": "Update verification status (admin or verifier only)",
         "tags": [
           "Properties"
         ],
@@ -1584,7 +1584,7 @@
     },
     "/api/payouts/summary": {
       "get": {
-        "summary": "Get commission and platform revenue summary (payment_manager only)",
+        "summary": "Get commission and platform revenue summary (accountant only)",
         "tags": [
           "Payouts"
         ],
@@ -1598,14 +1598,14 @@
             "description": "Commission summary data"
           },
           "403": {
-            "description": "Forbidden — payment_manager only"
+            "description": "Forbidden — accountant only"
           }
         }
       }
     },
     "/api/payouts": {
       "get": {
-        "summary": "Get all payouts with optional filters (payment_manager only)",
+        "summary": "Get all payouts with optional filters (accountant only)",
         "tags": [
           "Payouts"
         ],
@@ -1640,14 +1640,14 @@
             "description": "Paginated payout list"
           },
           "403": {
-            "description": "Forbidden — payment_manager only"
+            "description": "Forbidden — accountant only"
           }
         }
       }
     },
     "/api/payouts/host/{host_id}": {
       "get": {
-        "summary": "Get payouts for a specific host (payment_manager only)",
+        "summary": "Get payouts for a specific host (accountant only)",
         "tags": [
           "Payouts"
         ],
@@ -1672,14 +1672,14 @@
             "description": "Payout list for the host"
           },
           "403": {
-            "description": "Forbidden — payment_manager only"
+            "description": "Forbidden — accountant only"
           }
         }
       }
     },
     "/api/payouts/generate/{booking_id}": {
       "post": {
-        "summary": "Generate a payout record from a completed booking (payment_manager only)",
+        "summary": "Generate a payout record from a completed booking (accountant only)",
         "tags": [
           "Payouts"
         ],
@@ -1706,14 +1706,14 @@
             "description": "Booking not completed or payout already exists"
           },
           "403": {
-            "description": "Forbidden — payment_manager only"
+            "description": "Forbidden — accountant only"
           }
         }
       }
     },
     "/api/payouts/process/{payout_id}": {
       "post": {
-        "summary": "Process (approve and send) a payout to host (payment_manager only)",
+        "summary": "Process (approve and send) a payout to host (accountant only)",
         "tags": [
           "Payouts"
         ],
@@ -1740,7 +1740,7 @@
             "description": "Payout already processed"
           },
           "403": {
-            "description": "Forbidden — payment_manager only"
+            "description": "Forbidden — accountant only"
           }
         }
       }
@@ -2017,7 +2017,7 @@
         }
       },
       "get": {
-        "summary": "Get all disputes (payment_manager only)",
+        "summary": "Get all disputes (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2031,14 +2031,14 @@
             "description": "List of all disputes"
           },
           "403": {
-            "description": "Forbidden — payment_manager only"
+            "description": "Forbidden — accountant only"
           }
         }
       }
     },
     "/api/payments/disputes/{id}/resolve": {
       "put": {
-        "summary": "Resolve a dispute (payment_manager only)",
+        "summary": "Resolve a dispute (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2086,7 +2086,7 @@
     },
     "/api/payments/failed": {
       "get": {
-        "summary": "Get all failed payments (payment_manager only)",
+        "summary": "Get all failed payments (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2104,7 +2104,7 @@
     },
     "/api/payments/pending": {
       "get": {
-        "summary": "Get all pending payments (payment_manager only)",
+        "summary": "Get all pending payments (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2122,7 +2122,7 @@
     },
     "/api/payments": {
       "get": {
-        "summary": "Get all payments (payment_manager only)",
+        "summary": "Get all payments (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2140,7 +2140,7 @@
     },
     "/api/payments/report": {
       "get": {
-        "summary": "Generate payment report (payment_manager only)",
+        "summary": "Generate payment report (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2158,7 +2158,7 @@
     },
     "/api/payments/refund/{booking_id}": {
       "post": {
-        "summary": "Issue a full refund for a booking (payment_manager only)",
+        "summary": "Issue a full refund for a booking (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2201,7 +2201,7 @@
     },
     "/api/payments/refund/{booking_id}/partial": {
       "post": {
-        "summary": "Issue a partial refund (payment_manager only)",
+        "summary": "Issue a partial refund (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2252,7 +2252,7 @@
     },
     "/api/payments/status/{payment_id}": {
       "put": {
-        "summary": "Manually update payment status (payment_manager only)",
+        "summary": "Manually update payment status (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2305,7 +2305,7 @@
     },
     "/api/payments/reports/monthly": {
       "get": {
-        "summary": "Monthly revenue report (payment_manager only)",
+        "summary": "Monthly revenue report (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2323,7 +2323,7 @@
     },
     "/api/payments/reports/by-property": {
       "get": {
-        "summary": "Revenue breakdown by property (payment_manager only)",
+        "summary": "Revenue breakdown by property (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2341,7 +2341,7 @@
     },
     "/api/payments/reports/by-date": {
       "get": {
-        "summary": "Revenue breakdown by date range (payment_manager only)",
+        "summary": "Revenue breakdown by date range (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2377,7 +2377,7 @@
     },
     "/api/payments/reports/refunds": {
       "get": {
-        "summary": "Refund activity report (payment_manager only)",
+        "summary": "Refund activity report (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2395,7 +2395,7 @@
     },
     "/api/payments/reports/host-payouts": {
       "get": {
-        "summary": "Host payout report (payment_manager only)",
+        "summary": "Host payout report (accountant only)",
         "tags": [
           "Payments"
         ],
@@ -2687,7 +2687,7 @@
     },
     "/api/inspector/pending": {
       "get": {
-        "summary": "Get all properties pending inspection (field_inspector only)",
+        "summary": "Get all properties pending inspection (verifier only)",
         "tags": [
           "Inspector"
         ],
@@ -2701,7 +2701,7 @@
             "description": "List of properties awaiting inspection"
           },
           "403": {
-            "description": "Forbidden — field_inspector only"
+            "description": "Forbidden — verifier only"
           }
         }
       }
@@ -2722,7 +2722,7 @@
             "description": "Inspector dashboard stats (assigned, completed, pending)"
           },
           "403": {
-            "description": "Forbidden — field_inspector only"
+            "description": "Forbidden — verifier only"
           }
         }
       }
@@ -2743,7 +2743,7 @@
             "description": "Past inspection records"
           },
           "403": {
-            "description": "Forbidden — field_inspector only"
+            "description": "Forbidden — verifier only"
           }
         }
       }
@@ -2764,7 +2764,7 @@
             "description": "List of assigned inspections"
           },
           "403": {
-            "description": "Forbidden — field_inspector only"
+            "description": "Forbidden — verifier only"
           }
         }
       }
@@ -2818,7 +2818,7 @@
             "description": "Inspection report submitted"
           },
           "403": {
-            "description": "Forbidden — field_inspector only"
+            "description": "Forbidden — verifier only"
           }
         }
       }
@@ -2849,7 +2849,7 @@
             "description": "Badge approved — property is_verified becomes true"
           },
           "403": {
-            "description": "Forbidden — field_inspector only"
+            "description": "Forbidden — verifier only"
           }
         }
       }
@@ -2904,7 +2904,7 @@
     },
     "/api/inspector/reports/inspections": {
       "get": {
-        "summary": "Inspection report by date range (field_inspector only, ?format=csv supported)",
+        "summary": "Inspection report by date range (verifier only, ?format=csv supported)",
         "tags": [
           "Inspector"
         ],
@@ -2988,7 +2988,7 @@
     },
     "/api/inspector/assign": {
       "post": {
-        "summary": "Assign a field inspector to a property (admin only)",
+        "summary": "Assign a verifier to a property (admin only)",
         "tags": [
           "Inspector"
         ],
@@ -3117,7 +3117,7 @@
     },
     "/api/dashboard/payment-manager": {
       "get": {
-        "summary": "Get payment manager dashboard (payments, disputes, payouts)",
+        "summary": "Get accountant dashboard (payments, disputes, payouts)",
         "tags": [
           "Dashboard"
         ],
@@ -3131,14 +3131,14 @@
             "description": "Payment manager dashboard data"
           },
           "403": {
-            "description": "Forbidden — payment_manager only"
+            "description": "Forbidden — accountant only"
           }
         }
       }
     },
     "/api/dashboard/inspector": {
       "get": {
-        "summary": "Get field inspector dashboard (assigned inspections, completed count)",
+        "summary": "Get verifier dashboard (assigned inspections, completed count)",
         "tags": [
           "Dashboard"
         ],
@@ -3152,7 +3152,7 @@
             "description": "Inspector dashboard data"
           },
           "403": {
-            "description": "Forbidden — field_inspector only"
+            "description": "Forbidden — verifier only"
           }
         }
       }
@@ -4278,10 +4278,10 @@
                   "role": {
                     "type": "string",
                     "enum": [
-                      "payment_manager",
-                      "field_inspector"
+                      "accountant",
+                      "verifier"
                     ],
-                    "example": "field_inspector"
+                    "example": "verifier"
                   }
                 }
               }

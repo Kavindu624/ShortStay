@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { ArrowLeft, CreditCard } from 'lucide-react';
+import { ArrowLeft, CreditCard, CheckCircle, XCircle } from 'lucide-react';
 
 export default function PaymentPage() {
   const { bookingId } = useParams();
@@ -11,27 +11,82 @@ export default function PaymentPage() {
   const [form, setForm] = useState({ card_number: '', expiry: '', cvv: '', first_name: '', last_name: '', address: '', city: '', province: '', postal_code: '', mobile: '', email: '' });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [status, setStatus] = useState('idle'); // 'idle', 'success', 'failed'
 
   useEffect(() => { api.get(`/bookings/${bookingId}`).then(r => setBooking(r.data)).catch(() => {}); }, [bookingId]);
 
   const handlePay = async () => {
+    // Validate form fields
+    const required = ['card_number', 'expiry', 'cvv', 'first_name', 'last_name', 'address', 'city', 'email'];
+    for (const field of required) {
+      if (!form[field] || form[field].trim() === '') {
+        setMsg('Please fill in all required billing and card details.');
+        return;
+      }
+    }
+
     setLoading(true); setMsg('');
     try {
       await api.post('/payments/process', {
         booking_id: Number(bookingId),
         payment_method: 'card',
       });
-      setMsg('Payment successful! Redirecting...');
-      setTimeout(() => nav('/guest/bookings'), 2000);
-    } catch (err) { setMsg(err.response?.data?.message || 'Payment failed.'); }
+      setStatus('success');
+    } catch (err) { 
+      setErrorMsg(err.response?.data?.message || 'Please try again with a different payment method.');
+      setStatus('failed');
+    }
     finally { setLoading(false); }
   };
 
   const nights = booking ? Math.ceil((new Date(booking.checkout_date) - new Date(booking.checkin_date)) / 86400000) : 0;
   const base = booking ? Number(booking.total_price) : 0;
-  const service = Math.round(base * 0.05);
-  const tax = Math.round(base * 0.10);
-  const total = base + service + tax;
+  const total = base;
+
+  if (status === 'success') {
+    return (
+      <DashboardLayout>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '48px 40px', maxWidth: '420px', width: '100%' }}>
+            <CheckCircle size={72} color="#10b981" style={{ margin: '0 auto 24px auto' }} />
+            <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Your Payment is Successful!</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 28, lineHeight: '1.6' }}>
+              Enjoy your vacation with the amazing accommodation.<br/><br/>
+              Thank you for choosing ShortStay. A confirmation email has been sent to your email address.
+            </p>
+            <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: 12 }} onClick={() => nav('/guest/browse')}>
+              Back to Properties
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <DashboardLayout>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '48px 40px', maxWidth: '420px', width: '100%' }}>
+            <XCircle size={72} color="#ef4444" style={{ margin: '0 auto 24px auto' }} />
+            <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Your Payment is Unsuccessful</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 28 }}>
+              {errorMsg}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: 12 }} onClick={() => setStatus('idle')}>
+                Retry Payment
+              </button>
+              <button className="btn-gray" style={{ width: '100%', justifyContent: 'center', padding: 12 }} onClick={() => nav('/guest/browse')}>
+                Back to Properties
+              </button>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -117,8 +172,6 @@ export default function PaymentPage() {
             <div style={{ fontSize: 13 }}>
               {[
                 [`Total cost of rent (${nights} days)`, `Rs. ${base.toLocaleString()}`],
-                ['Service charges (5%)', `Rs. ${service.toLocaleString()}`],
-                ['Tax (10%)', `Rs. ${tax.toLocaleString()}`],
                 ['Discount', '- Rs. 0'],
               ].map(([l, v]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: l === 'Discount' ? 'var(--accent)' : 'var(--text-muted)' }}>
@@ -132,7 +185,20 @@ export default function PaymentPage() {
             <button className="btn-primary" onClick={handlePay} disabled={loading} style={{ width: '100%', justifyContent: 'center', padding: 13, borderRadius: 8, marginTop: 16 }}>
               {loading ? 'Processing...' : 'Pay Now'}
             </button>
-            <button className="btn-gray" style={{ width: '100%', justifyContent: 'center', padding: 11, borderRadius: 8, marginTop: 8, fontSize: 13 }}>
+            <button className="btn-gray" 
+              onClick={() => {
+                setForm({ card_number: '4242 4242 4242 4242', expiry: '12/2026', cvv: '123', first_name: 'John', last_name: 'Doe', address: '123 Main Street', city: 'Colombo', province: 'Western', postal_code: '00100', mobile: '+94 77 123 4567', email: 'john.doe@email.com' });
+                setMsg('Test data filled! You can now click Pay Now.');
+              }}
+              style={{ width: '100%', justifyContent: 'center', padding: 11, borderRadius: 8, marginTop: 8, fontSize: 13 }}>
+              Fill Test Data
+            </button>
+            <button className="btn-gray" 
+              onClick={() => { 
+                setErrorMsg('Insufficient funds (Simulated error)');
+                setStatus('failed'); 
+              }}
+              style={{ width: '100%', justifyContent: 'center', padding: 11, borderRadius: 8, marginTop: 8, fontSize: 13 }}>
               Simulate Failed Payment
             </button>
           </div>

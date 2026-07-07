@@ -8,8 +8,8 @@ const panelLabel = {
   guest: 'Guest Panel',
   host: 'Host Panel',
   admin: 'Admin Panel',
-  field_inspector: 'Inspector Panel',
-  payment_manager: 'Accountant Panel',
+  verifier: 'Inspector Panel',
+  accountant: 'Accountant Panel',
 };
 
 export default function TopBar() {

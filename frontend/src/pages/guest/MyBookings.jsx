@@ -9,13 +9,17 @@ const statusBadge = {
   confirmed: 'badge-success', 
   pending: 'badge-warning', 
   cancelled: 'badge-error', 
-  completed: 'badge-info' 
+  completed: 'badge-info',
+  approved: 'badge-primary',
+  rejected: 'badge-gray'
 };
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
+  const [cancelModal, setCancelModal] = useState({ show: false, bookingId: null, reason: '' });
+  const [cancelSuccess, setCancelSuccess] = useState({ show: false, data: null });
   const nav = useNavigate();
 
   const load = () => { 
@@ -27,10 +31,13 @@ export default function MyBookings() {
   
   useEffect(() => { load(); }, []);
 
-  const cancel = async (id) => {
-    if (!confirm('Cancel this booking?')) return;
+  const executeCancel = async () => {
     try { 
-      await api.put(`/bookings/${id}/cancel`); 
+      const res = await api.put(`/bookings/${cancelModal.bookingId}/cancel`, {
+        cancellation_reason: cancelModal.reason
+      }); 
+      setCancelModal({ show: false, bookingId: null, reason: '' });
+      setCancelSuccess({ show: true, data: res.data });
       load(); 
     } catch (err) { 
       alert(err.response?.data?.message || 'Failed'); 
@@ -52,8 +59,8 @@ export default function MyBookings() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map(t => (
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        {['all', 'pending', 'approved', 'rejected', 'confirmed', 'completed', 'cancelled'].map(t => (
           <button key={t} onClick={() => setTab(t)}
             style={{ 
               padding: '7px 16px', borderRadius: 20, fontWeight: 600, fontSize: 13, 
@@ -142,7 +149,7 @@ export default function MyBookings() {
                 </button>
                 
                 {(b.status === 'pending' || b.status === 'approved' || b.status === 'confirmed') && (
-                  <button onClick={() => cancel(b.booking_id)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#ef4444', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginLeft: 'auto' }}>
+                  <button onClick={() => setCancelModal({ show: true, bookingId: b.booking_id, reason: '' })} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', color: '#ef4444', fontWeight: 600, fontSize: 13, cursor: 'pointer', marginLeft: 'auto' }}>
                     <XCircle size={14} /> Cancel Booking
                   </button>
                 )}
@@ -171,11 +178,53 @@ export default function MyBookings() {
           If you have any questions about your booking, our support team is here to help 24/7.
         </p>
         <div>
-          <button className="btn-primary" onClick={() => nav('/contact')} style={{ padding: '8px 20px', borderRadius: 8 }}>
+          <button className="btn-primary" onClick={() => nav('/guest/complaints')} style={{ padding: '8px 20px', borderRadius: 8 }}>
             Contact Support
           </button>
         </div>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {cancelModal.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', padding: 24, animation: 'fadeIn 0.2s ease-out' }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Cancel Booking</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 16, lineHeight: 1.5 }}>
+              Are you sure you want to cancel this booking? Please note that refunds are processed according to the host's cancellation policy.
+            </p>
+            
+            <label className="form-label">Cancellation Reason (Optional)</label>
+            <textarea 
+              className="form-input" 
+              style={{ minHeight: 80, marginBottom: 20 }}
+              placeholder="Why are you cancelling?"
+              value={cancelModal.reason}
+              onChange={e => setCancelModal(prev => ({ ...prev, reason: e.target.value }))}
+            />
+            
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button className="btn-outline" onClick={() => setCancelModal({ show: false, bookingId: null, reason: '' })}>Keep Booking</button>
+              <button className="btn-danger" onClick={executeCancel}>Confirm Cancellation</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Success Modal */}
+      {cancelSuccess.show && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: 32, animation: 'fadeIn 0.2s ease-out' }}>
+            <XCircle size={64} color="#ef4444" style={{ margin: '0 auto 16px' }} />
+            <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>Booking Cancelled</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.5 }}>
+              {cancelSuccess.data?.refund_message || 'Your booking has been successfully cancelled.'}
+            </p>
+            <button className="btn-outline" onClick={() => setCancelSuccess({ show: false, data: null })} style={{ width: '100%', justifyContent: 'center' }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

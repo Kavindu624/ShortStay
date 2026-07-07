@@ -733,14 +733,14 @@ exports.requestVerification = async (req, res) => {
         property.verification_status === 'rejected'
           ? 'Re-Verification Request 🏠'
           : 'New Verification Request 🏠',
-        `Host has requested verification for property "${property.title}". Please assign a field inspector.`,
+        `Host has requested verification for property "${property.title}". Please assign a verifier.`,
         'verification_requested',
         property.property_id
       )
     ));
 
     res.status(200).json({
-      message: 'Verification requested. A field inspector will visit your property.',
+      message: 'Verification requested. A verifier will visit your property.',
       property
     });
   } catch (err) {

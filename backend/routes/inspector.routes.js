@@ -6,13 +6,13 @@ const auth     = require('../middleware/auth.middleware');
 const role     = require('../middleware/role.middleware');
 const uploadInspection = require('../middleware/uploadInspection.middleware');
 
-// ── Field Inspector routes ────────────────────────────────────────────────────
+// ── Verifier routes ────────────────────────────────────────────────────
 
 /**
  * @swagger
  * /api/inspector/pending:
  *   get:
- *     summary: Get all properties pending inspection (field_inspector only)
+ *     summary: Get all properties pending inspection (verifier only)
  *     tags: [Inspector]
  *     security:
  *       - BearerAuth: []
@@ -20,9 +20,9 @@ const uploadInspection = require('../middleware/uploadInspection.middleware');
  *       200:
  *         description: List of properties awaiting inspection
  *       403:
- *         description: Forbidden — field_inspector only
+ *         description: Forbidden — verifier only
  */
-router.get('/pending', auth, role('field_inspector'), inspectorController.getPendingProperties);
+router.get('/pending', auth, role('verifier'), inspectorController.getPendingProperties);
 
 /**
  * @swagger
@@ -36,9 +36,9 @@ router.get('/pending', auth, role('field_inspector'), inspectorController.getPen
  *       200:
  *         description: Inspector dashboard stats (assigned, completed, pending)
  *       403:
- *         description: Forbidden — field_inspector only
+ *         description: Forbidden — verifier only
  */
-router.get('/dashboard', auth, role('field_inspector'), inspectorController.getInspectorDashboard);
+router.get('/dashboard', auth, role('verifier'), inspectorController.getInspectorDashboard);
 
 /**
  * @swagger
@@ -52,9 +52,9 @@ router.get('/dashboard', auth, role('field_inspector'), inspectorController.getI
  *       200:
  *         description: Past inspection records
  *       403:
- *         description: Forbidden — field_inspector only
+ *         description: Forbidden — verifier only
  */
-router.get('/history', auth, role('field_inspector'), inspectorController.getInspectionHistory);
+router.get('/history', auth, role('verifier'), inspectorController.getInspectionHistory);
 
 /**
  * @swagger
@@ -68,9 +68,9 @@ router.get('/history', auth, role('field_inspector'), inspectorController.getIns
  *       200:
  *         description: List of assigned inspections
  *       403:
- *         description: Forbidden — field_inspector only
+ *         description: Forbidden — verifier only
  */
-router.get('/', auth, role('field_inspector'), inspectorController.getInspections);
+router.get('/', auth, role('verifier'), inspectorController.getInspections);
 
 /**
  * @swagger
@@ -95,9 +95,9 @@ router.get('/', auth, role('field_inspector'), inspectorController.getInspection
  *       201:
  *         description: Inspection report submitted
  *       403:
- *         description: Forbidden — field_inspector only
+ *         description: Forbidden — verifier only
  */
-router.post('/submit', auth, role('field_inspector'), inspectorController.submitInspection);
+router.post('/submit', auth, role('verifier'), inspectorController.submitInspection);
 
 /**
  * @swagger
@@ -116,9 +116,9 @@ router.post('/submit', auth, role('field_inspector'), inspectorController.submit
  *       200:
  *         description: Badge approved — property is_verified becomes true
  *       403:
- *         description: Forbidden — field_inspector only
+ *         description: Forbidden — verifier only
  */
-router.put('/badge/:property_id', auth, role('field_inspector'), inspectorController.approveBadge);
+router.put('/badge/:property_id', auth, role('verifier'), inspectorController.approveBadge);
 
 /**
  * @swagger
@@ -152,7 +152,7 @@ router.put('/badge/:property_id', auth, role('field_inspector'), inspectorContro
  */
 router.post(
   '/:inspection_id/images',
-  auth, role('field_inspector'),
+  auth, role('verifier'),
   uploadInspection.array('images', 5),
   inspectorController.uploadInspectionImages
 );
@@ -163,7 +163,7 @@ router.post(
  * @swagger
  * /api/inspector/reports/inspections:
  *   get:
- *     summary: Inspection report by date range (field_inspector only, ?format=csv supported)
+ *     summary: Inspection report by date range (verifier only, ?format=csv supported)
  *     tags: [Inspector]
  *     security:
  *       - BearerAuth: []
@@ -182,7 +182,7 @@ router.post(
  *       200:
  *         description: Inspection report
  */
-router.get('/reports/inspections', auth, role('field_inspector'), reportsController.inspectionByDateReport);
+router.get('/reports/inspections', auth, role('verifier'), reportsController.inspectionByDateReport);
 
 /**
  * @swagger
@@ -196,7 +196,7 @@ router.get('/reports/inspections', auth, role('field_inspector'), reportsControl
  *       200:
  *         description: Success rate statistics
  */
-router.get('/reports/success-rate', auth, role('field_inspector'), reportsController.inspectionSuccessRateReport);
+router.get('/reports/success-rate', auth, role('verifier'), reportsController.inspectionSuccessRateReport);
 
 /**
  * @swagger
@@ -210,7 +210,7 @@ router.get('/reports/success-rate', auth, role('field_inspector'), reportsContro
  *       200:
  *         description: Approved vs rejected comparison data
  */
-router.get('/reports/approved-vs-rejected', auth, role('field_inspector'), reportsController.approvedVsRejectedReport);
+router.get('/reports/approved-vs-rejected', auth, role('verifier'), reportsController.approvedVsRejectedReport);
 
 // ── Admin routes ──────────────────────────────────────────────────────────────
 
@@ -218,7 +218,7 @@ router.get('/reports/approved-vs-rejected', auth, role('field_inspector'), repor
  * @swagger
  * /api/inspector/assign:
  *   post:
- *     summary: Assign a field inspector to a property (admin only)
+ *     summary: Assign a verifier to a property (admin only)
  *     tags: [Inspector]
  *     security:
  *       - BearerAuth: []

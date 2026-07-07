@@ -25,7 +25,7 @@ app.use(responseTimeMonitor);    // X-Response-Time header + slow-req warning
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests from any localhost port (dev), and the configured FRONTEND_URL
+    // Allow requests from any localhost port (dev), the configured FRONTEND_URL, and local network IPs
     const allowed = [
       process.env.FRONTEND_URL,
       'http://localhost:5173',
@@ -34,7 +34,11 @@ app.use(cors({
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
     ];
-    if (!origin || allowed.includes(origin)) {
+    
+    // Allow local network IPs like 192.168.x.x, 10.x.x.x, 172.x.x.x for mobile testing
+    const isLocalNetwork = origin && (origin.startsWith('http://192.168.') || origin.startsWith('http://10.') || origin.startsWith('http://172.'));
+
+    if (!origin || allowed.includes(origin) || isLocalNetwork) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: Origin '${origin}' not allowed`));

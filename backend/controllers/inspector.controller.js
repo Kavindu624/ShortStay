@@ -132,7 +132,7 @@ exports.submitInspection = async (req, res) => {
     await notify(
       property.host_id,
       'Property Inspection Completed 🔍',
-      `A field inspector has completed the inspection of your property "${property.title}". Verification decision coming soon.`,
+      `A verifier has completed the inspection of your property "${property.title}". Verification decision coming soon.`,
       'inspection_completed',
       property_id
     );
@@ -276,8 +276,8 @@ exports.assignInspector = async (req, res) => {
     }
 
     const inspector = await User.findByPk(inspector_id);
-    if (!inspector || inspector.role !== 'field_inspector') {
-      return res.status(400).json({ message: 'Invalid field inspector ID' });
+    if (!inspector || inspector.role !== 'verifier') {
+      return res.status(400).json({ message: 'Invalid verifier ID' });
     }
 
     const inspection = await Inspection.create({
@@ -302,7 +302,7 @@ exports.assignInspector = async (req, res) => {
     await notify(
       property.host_id,
       'Inspection Scheduled 📅',
-      `A field inspector has been assigned to verify your property "${property.title}".${scheduled_date ? ` Scheduled date: ${scheduled_date}.` : ''}`,
+      `A verifier has been assigned to verify your property "${property.title}".${scheduled_date ? ` Scheduled date: ${scheduled_date}.` : ''}`,
       'inspection_scheduled',
       property_id
     );

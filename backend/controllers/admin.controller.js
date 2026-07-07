@@ -3,6 +3,7 @@ const { Op }   = require('sequelize');
 const sendEmail = require('../utils/sendEmail');
 const notify   = require('../utils/notify');
 const logActivity = require('../utils/activityLogger');
+const { markAsAvailable } = require('./availability.controller');
 const { accountSuspendedEmail, accountReinstatedEmail } = require('../utils/emailTemplates');
 
 // GET ALL USERS
@@ -24,6 +25,47 @@ exports.deleteUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    const force = req.query.force === 'true';
+
+    if (user.role === 'guest') {
+      const activeBookings = await Booking.findAll({
+        where: {
+          guest_id: user.user_id,
+          status: ['pending', 'approved', 'confirmed']
+        }
+      });
+      if (activeBookings.length > 0) {
+        if (!force) {
+          return res.status(400).json({ message: 'Cannot delete user: Guest has active bookings. Please cancel them first.' });
+        }
+        for (const booking of activeBookings) {
+          await booking.update({ status: 'cancelled' });
+          await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);
+        }
+      }
+    } else if (user.role === 'host') {
+      const properties = await Property.findAll({ where: { host_id: user.user_id } });
+      const propertyIds = properties.map(p => p.property_id);
+      
+      if (propertyIds.length > 0) {
+        const activeBookings = await Booking.findAll({
+          where: {
+            property_id: propertyIds,
+            status: ['pending', 'approved', 'confirmed']
+          }
+        });
+        if (activeBookings.length > 0) {
+          if (!force) {
+            return res.status(400).json({ message: 'Cannot delete user: Host properties have active bookings. Please manage them first.' });
+          }
+          for (const booking of activeBookings) {
+            await booking.update({ status: 'cancelled' });
+            await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);
+          }
+        }
+      }
     }
 
     const deletedInfo = { user_id: user.user_id, name: user.name, email: user.email, role: user.role };
@@ -258,7 +300,7 @@ exports.getDashboardStats = async (req, res) => {
     const totalHosts      = await User.count({ where: { role: 'host' }});
     const totalStaff      = await User.count({ 
       where: { 
-        role: ['admin', 'payment_manager', 'field_inspector'] 
+        role: ['admin', 'accountant', 'verifier'] 
       }
     });
 

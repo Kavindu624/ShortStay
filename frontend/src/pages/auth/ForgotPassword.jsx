@@ -27,7 +27,7 @@ export default function ForgotPassword() {
           <div style={{ background: 'var(--primary)', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Building2 size={20} color="white" /></div>
           <span style={{ fontWeight: 800, fontSize: 20, color: 'var(--primary)' }}>ShortStay</span>
         </Link>
-        <Link to="/access-portal"><button className="btn-primary">Go To Access Panel</button></Link>
+        <Link to="/login"><button className="btn-primary">Log In</button></Link>
       </nav>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div className="card" style={{ width: '100%', maxWidth: 440, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', textAlign: 'center' }}>

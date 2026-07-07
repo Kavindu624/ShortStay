@@ -6,8 +6,8 @@ const ROLES = [
   { key: 'admin',           label: '🛡️ Admin',            path: '/admin/dashboard' },
   { key: 'guest',           label: '🏠 Guest',             path: '/guest/browse' },
   { key: 'host',            label: '🏡 Host',              path: '/host/listings' },
-  { key: 'field_inspector', label: '🔍 Inspector',         path: '/inspector/inspections' },
-  { key: 'payment_manager', label: '💳 Payment Manager',  path: '/pm/dashboard' },
+  { key: 'verifier', label: '🔍 Inspector',         path: '/inspector/inspections' },
+  { key: 'accountant', label: '💳 Accountant',  path: '/pm/dashboard' },
 ];
 
 const PUBLIC_PAGES = [

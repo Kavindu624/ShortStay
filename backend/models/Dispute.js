@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 /**
- * Dispute model — tracks payment disputes raised by guests or flagged by payment managers
+ * Dispute model — tracks payment disputes raised by guests or flagged by accountants
  */
 const Dispute = sequelize.define('dispute', {
   dispute_id: {
@@ -36,7 +36,7 @@ const Dispute = sequelize.define('dispute', {
     type: DataTypes.INTEGER,
     allowNull: true,
     defaultValue: null,
-    comment: 'user_id of the payment_manager who resolved this',
+    comment: 'user_id of the accountant who resolved this',
   },
   resolved_at: {
     type: DataTypes.DATE,

@@ -77,12 +77,12 @@ npm run build
 | `/admin/payments` | Payment overview |
 | `/admin/reports` | Reports & analytics with charts |
 
-### Field Inspector (role: `field_inspector`)
+### Verifier (role: `verifier`)
 | Route | Page |
 |-------|------|
 | `/inspector/inspections` | View inspections + submit + approve badge |
 
-### Payment Manager (role: `payment_manager`)
+### Accountant (role: `accountant`)
 | Route | Page |
 |-------|------|
 | `/pm/dashboard` | Financial dashboard + transactions |

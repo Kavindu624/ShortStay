@@ -13,23 +13,23 @@ export default function AdminDashboard() {
     // Pull real monthly data from reports endpoint
     api.get('/payments/reports/monthly')
       .then(r => {
-        const data = (r.data || []).map(m => ({
+        const data = (r.data?.data || r.data || []).map(m => ({
           month: m.month || m.period || m.year_month || '?',
           revenue: Number(m.total_revenue || m.revenue || m.amount || 0),
-          bookings: Number(m.booking_count || m.bookings || 0),
+          bookings: Number(m.booking_count || m.bookings || m.payments || 0),
         }));
         setMonthlyData(data);
       })
       .catch(() => {});
   }, []);
 
-  // Normalize stats from backend (backend may use different field names)
-  const totalUsers = stats?.total_users ?? stats?.totalUsers ?? 0;
-  const totalProperties = stats?.total_properties ?? stats?.totalProperties ?? 0;
-  const totalBookings = stats?.total_bookings ?? stats?.totalBookings ?? 0;
-  const totalRevenue = stats?.total_revenue ?? stats?.totalRevenue ?? 0;
-  const pendingApprovals = stats?.pending_approvals ?? stats?.pendingApprovals ?? 0;
-  const openComplaints = stats?.open_complaints ?? stats?.openComplaints ?? 0;
+  // Normalize stats from backend
+  const totalUsers = stats?.user_stats?.total ?? 0;
+  const totalProperties = stats?.property_stats?.total ?? 0;
+  const totalBookings = stats?.booking_stats?.total ?? 0;
+  const totalRevenue = stats?.payment_stats?.total_revenue ?? 0;
+  const pendingApprovals = stats?.property_stats?.pending_approvals ?? 0;
+  const openComplaints = stats?.complaint_stats?.open ?? 0;
   const activeInspections = stats?.active_inspections ?? 0;
 
   return (

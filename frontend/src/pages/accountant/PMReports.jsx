@@ -29,10 +29,10 @@ export default function PMReports() {
       api.get('/payments/reports/refunds'),
       api.get('/payments/reports/host-payouts'),
     ]).then(([m, p, r, h]) => {
-      if (m.status === 'fulfilled') setMonthly(m.value.data || []);
-      if (p.status === 'fulfilled') setByProp(p.value.data || []);
-      if (r.status === 'fulfilled') setRefunds(r.value.data || []);
-      if (h.status === 'fulfilled') setPayouts(h.value.data || []);
+      if (m.status === 'fulfilled') setMonthly(m.value.data?.data || []);
+      if (p.status === 'fulfilled') setByProp(p.value.data?.data || []);
+      if (r.status === 'fulfilled') setRefunds(r.value.data?.data || []);
+      if (h.status === 'fulfilled') setPayouts(h.value.data?.data || []);
     }).finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -44,7 +44,7 @@ export default function PMReports() {
       if (dateRange.start_date) params.set('start_date', dateRange.start_date);
       if (dateRange.end_date) params.set('end_date', dateRange.end_date);
       const r = await api.get(`/payments/reports/by-date?${params}`);
-      setDateRevenue(r.data || []);
+      setDateRevenue(r.data?.data || []);
     } catch {}
     finally { setDateLoading(false); }
   };

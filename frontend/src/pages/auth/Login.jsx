@@ -13,7 +13,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const roleHome = { guest: '/guest/browse', host: '/host/listings', admin: '/admin/dashboard', field_inspector: '/inspector/inspections', payment_manager: '/pm/dashboard' };
+  const roleHome = { guest: '/guest/browse', host: '/host/listings', admin: '/admin/dashboard', verifier: '/inspector/inspections', accountant: '/pm/dashboard' };
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -34,7 +34,8 @@ export default function Login() {
     setError(''); setLoading(true);
     try {
       const user = await login(form.email, form.password);
-      navigate(roleHome[user.role] || '/');
+      const next = searchParams.get('next');
+      navigate(next || roleHome[user.role] || '/');
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid credentials');
     } finally { setLoading(false); }
@@ -42,13 +43,16 @@ export default function Login() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f6fa', display: 'flex', flexDirection: 'column' }}>
-      {/* Minimal nav */}
       <nav style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <div style={{ background: 'var(--primary)', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Building2 size={20} color="white" /></div>
           <span style={{ fontWeight: 800, fontSize: 20, color: 'var(--primary)' }}>ShortStay</span>
         </Link>
-        <Link to="/access-portal"><button className="btn-primary">Go To Access Panel</button></Link>
+        <div style={{ display: 'flex', gap: 24, fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
+          <Link to="/" style={{ color: '#1a1a1a', textDecoration: 'none' }}>Home</Link>
+          <Link to="/contact" style={{ color: '#1a1a1a', textDecoration: 'none' }}>Contact</Link>
+          <Link to="/about" style={{ color: '#1a1a1a', textDecoration: 'none' }}>About</Link>
+        </div>
       </nav>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -83,7 +87,7 @@ export default function Login() {
             <span style={{ position: 'relative', background: 'white', padding: '0 12px', fontSize: 12, color: '#6b7280', fontWeight: 500 }}>Or log in with:</span>
           </div>
 
-          <button type="button" onClick={() => window.location.href = `${API_BASE}/api/auth/google`} style={{ width: '100%', padding: '12px', background: 'white', border: '1.5px solid #1e3a8a', borderRadius: 6, color: '#1e3a8a', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', marginBottom: 24 }}>
+          <button type="button" onClick={() => window.location.href = `${API_BASE}/api/auth/google?action=login`} style={{ width: '100%', padding: '12px', background: 'white', border: '1.5px solid #1e3a8a', borderRadius: 6, color: '#1e3a8a', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', marginBottom: 24 }}>
             <svg width="18" height="18" viewBox="0 0 48 48">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
               <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>

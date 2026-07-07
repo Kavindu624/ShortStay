@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
+import PublicLayout from '../../components/PublicLayout';
 import api from '../../api';
 import { getImageUrl } from '../../utils';
 import { MapPin, Star, Search, Filter, X, Users, ChevronDown, BadgeCheck } from 'lucide-react';
 
 const PROPERTY_TYPES = ['', 'apartment', 'house', 'villa', 'condo', 'studio', 'cabin'];
 
-export default function BrowseListings() {
+export default function BrowseListings({ publicMode = false }) {
   const [properties, setProperties] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -53,8 +54,10 @@ export default function BrowseListings() {
 
   const resetFilters = () => setFilters({ min_price: '', max_price: '', property_type: '', min_guests: '', sort: 'newest' });
 
+  const Layout = publicMode ? PublicLayout : DashboardLayout;
+
   return (
-    <DashboardLayout>
+    <Layout>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
         <div>
           <div className="page-title">Browse Properties</div>
@@ -140,7 +143,8 @@ export default function BrowseListings() {
             <div key={p.property_id} className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = ''; }}
-              onClick={() => nav(`/guest/property/${p.property_id}`)}>
+              onClick={() => nav(publicMode ? `/browse/property/${p.property_id}` : `/guest/property/${p.property_id}`)}>
+
               <div style={{ height: 170, background: '#e5e7eb', position: 'relative' }}>
                 {(() => {
                   const primary = p.images?.find(i => i.is_primary) || p.images?.[0];
@@ -193,6 +197,6 @@ export default function BrowseListings() {
           ))}
         </div>
       )}
-    </DashboardLayout>
+    </Layout>
   );
 }

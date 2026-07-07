@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
+import PublicLayout from '../../components/PublicLayout';
 import api from '../../api';
 import { getImageUrl } from '../../utils';
-import { MapPin, Star, Users, ArrowLeft, Calendar, BadgeCheck } from 'lucide-react';
+import { MapPin, Star, Users, ArrowLeft, Calendar, BadgeCheck, CheckCircle } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-export default function GuestPropertyDetail() {
+export default function GuestPropertyDetail({ publicMode = false }) {
   const { id } = useParams();
   const nav = useNavigate();
   const [property, setProperty] = useState(null);
@@ -17,6 +18,7 @@ export default function GuestPropertyDetail() {
   const [booking, setBooking] = useState(false);
   const [msg, setMsg] = useState('');
   const [activeImage, setActiveImage] = useState(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const [settings, setSettings] = useState(null);
 
@@ -30,7 +32,16 @@ export default function GuestPropertyDetail() {
     api.get('/settings').then(r => setSettings(r.data)).catch(() => {});
   }, [id]);
 
-  if (!property) return <DashboardLayout><div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '60px 0' }}>Loading...</div></DashboardLayout>;
+  if (!property) {
+    const LoadLayout = publicMode ? PublicLayout : DashboardLayout;
+    return (
+      <LoadLayout>
+        <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '60px 0' }}>Loading...</div>
+      </LoadLayout>
+    );
+  }
+
+  const Layout = publicMode ? PublicLayout : DashboardLayout;
 
   const availableDatesStr = property?.availability?.map(d => d.available_date.split('T')[0]) || [];
   const isAvailable = (date) => {
@@ -62,6 +73,12 @@ export default function GuestPropertyDetail() {
   const total = nights * Number(property.price_per_night);
 
   const handleBook = async () => {
+    // If browsing publicly, send to login first then return here
+    if (publicMode) {
+      nav(`/login?next=/browse/property/${id}`);
+      return;
+    }
+
     if (!checkin || !checkout || nights <= 0) { setMsg('Please select valid dates.'); return; }
     
     if (settings) {
@@ -79,14 +96,13 @@ export default function GuestPropertyDetail() {
     setBooking(true); setMsg('');
     try {
       const res = await api.post('/bookings', { property_id: id, checkin_date: checkin, checkout_date: checkout });
-      setMsg('Booking submitted! Awaiting host approval.');
-      nav('/guest/bookings');
+      setShowSuccessPopup(true);
     } catch (err) { setMsg(err.response?.data?.message || 'Booking failed.'); }
     finally { setBooking(false); }
   };
 
   return (
-    <DashboardLayout>
+    <Layout>
       <button onClick={() => nav(-1)} style={{ background: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, fontWeight: 500, cursor: 'pointer' }}>
         <ArrowLeft size={16} /> Back
       </button>
@@ -203,6 +219,26 @@ export default function GuestPropertyDetail() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+
+      {showSuccessPopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: 32, animation: 'fadeIn 0.2s ease-out' }}>
+            <CheckCircle size={64} color="#10b981" style={{ margin: '0 auto 16px' }} />
+            <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>Booking Request Sent!</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.5 }}>
+              Your reservation request for <strong>{property.title}</strong> has been successfully submitted and is awaiting host approval.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <button className="btn-primary" onClick={() => nav('/guest/bookings')} style={{ justifyContent: 'center', padding: '12px' }}>
+                View My Bookings
+              </button>
+              <button className="btn-outline" onClick={() => { setShowSuccessPopup(false); setCheckin(''); setCheckout(''); }} style={{ justifyContent: 'center', padding: '12px' }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Layout>
   );
 }

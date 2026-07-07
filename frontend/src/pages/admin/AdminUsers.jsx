@@ -3,13 +3,13 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { Users, Trash2, Plus, ShieldOff, ShieldCheck } from 'lucide-react';
 
-const roleColors = { guest: 'badge-info', host: 'badge-success', admin: 'badge-error', field_inspector: 'badge-warning', payment_manager: 'badge-gray' };
+const roleColors = { guest: 'badge-info', host: 'badge-success', admin: 'badge-error', verifier: 'badge-warning', accountant: 'badge-primary' };
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'field_inspector' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'verifier' });
   const [msg, setMsg] = useState('');
   const [suspendReason, setSuspendReason] = useState({});
   const [showSuspendFor, setShowSuspendFor] = useState(null);
@@ -17,9 +17,23 @@ export default function AdminUsers() {
   const load = () => { api.get('/admin/users').then(r => setUsers(r.data || [])).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(load, []);
 
-  const deleteUser = async (id) => {
-    if (!confirm('Delete this user? This cannot be undone.')) return;
-    try { await api.delete(`/admin/users/${id}`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+  const deleteUser = async (id, force = false) => {
+    if (!force) {
+      if (!confirm('Delete this user? This cannot be undone.')) return;
+    }
+    try { 
+      await api.delete(`/admin/users/${id}${force ? '?force=true' : ''}`); 
+      load(); 
+    } catch (err) { 
+      const errorMsg = err.response?.data?.message || 'Failed';
+      if (errorMsg.includes('active bookings')) {
+        if (confirm(`${errorMsg}\n\nDo you want to forcibly cancel all active bookings and delete this user anyway?`)) {
+          deleteUser(id, true);
+        }
+      } else {
+        alert(errorMsg);
+      }
+    }
   };
 
   const suspendUser = async (id) => {
@@ -57,8 +71,8 @@ export default function AdminUsers() {
             <div className="form-group">
               <label className="form-label">Role</label>
               <select className="form-input" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                <option value="field_inspector">Field Inspector</option>
-                <option value="payment_manager">Payment Manager</option>
+                <option value="verifier">Verifier</option>
+                <option value="accountant">Accountant</option>
               </select>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>

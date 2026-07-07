@@ -5,7 +5,7 @@
  *  Admin:          booking report, user registration report, property approval report,
  *                  complaint resolution report, date-range filtering, CSV export
  *  Payment Mgr:    monthly revenue, revenue by property/date, refunds, host payouts, CSV export
- *  Field Inspector: inspection report by date, success rate, approved vs rejected
+ *  Verifier: inspection report by date, success rate, approved vs rejected
  *
  * CSV generation uses a tiny inline helper — no extra dependency needed.
  */

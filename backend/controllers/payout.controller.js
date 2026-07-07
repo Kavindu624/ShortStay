@@ -5,7 +5,7 @@
  *
  * Platform commission: default 10% (configurable via PLATFORM_COMMISSION_RATE env var)
  *
- * Endpoints (all Payment Manager only unless noted):
+ * Endpoints (all Accountant only unless noted):
  *   POST /api/payouts/generate/:booking_id  — create payout record for a booking
  *   POST /api/payouts/process/:payout_id    — mark payout as processed/sent
  *   GET  /api/payouts                       — all payouts (filterable)
@@ -163,7 +163,7 @@ exports.processPayout = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  GET ALL PAYOUTS (Payment Manager — filterable + paginated)
+//  GET ALL PAYOUTS (Accountant — filterable + paginated)
 //  GET /api/payouts?status=pending&from=2026-01-01&to=2026-12-31&page=1&limit=20
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getAllPayouts = async (req, res) => {
@@ -209,7 +209,7 @@ exports.getAllPayouts = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  GET PAYOUTS FOR A SPECIFIC HOST (Payment Manager)
+//  GET PAYOUTS FOR A SPECIFIC HOST (Accountant)
 //  GET /api/payouts/host/:host_id
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getPayoutsByHost = async (req, res) => {
@@ -276,7 +276,7 @@ exports.getMyPayouts = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  PLATFORM COMMISSION SUMMARY (Payment Manager)
+//  PLATFORM COMMISSION SUMMARY (Accountant)
 //  GET /api/payouts/summary?from=&to=
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getCommissionSummary = async (req, res) => {
