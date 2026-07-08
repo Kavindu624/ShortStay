@@ -27,10 +27,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# ── Uploads (user-generated content) ─────────────────────────────────────────
-backend/uploads/
-uploads/
-
 # ── Runtime & Cache ───────────────────────────────────────────────────────────
 .cache/
 .parcel-cache/

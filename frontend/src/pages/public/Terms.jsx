@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { Building2, ArrowLeft } from 'lucide-react';
 
 export default function Terms() {
   return (
@@ -15,6 +15,11 @@ export default function Terms() {
       </nav>
 
       <div style={{ flex: 1, padding: '48px 24px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', marginBottom: 16 }}>
+          <Link to="/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#4b5563', textDecoration: 'none', fontWeight: 600, transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'} onMouseLeave={e => e.currentTarget.style.color = '#4b5563'}>
+            <ArrowLeft size={16} /> Back to Register
+          </Link>
+        </div>
         <div style={{ background: 'white', width: '100%', maxWidth: 800, margin: '0 auto', padding: '48px 64px', borderRadius: 16, boxShadow: '0 12px 48px rgba(0,0,0,0.04)' }}>
           <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 24, color: '#1a1a1a' }}>Terms and Conditions</h1>
           <p style={{ color: '#6b7280', marginBottom: 32 }}>Last Updated: July 5, 2026</p>

@@ -196,7 +196,7 @@ export default function Register() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 }}>
               <input type="checkbox" id="terms" checked={terms} onChange={e => setTerms(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
               <label htmlFor="terms" style={{ fontSize: 13, color: '#4b5563', cursor: 'pointer' }}>
-                I agree to the <Link to="/terms" target="_blank" style={{ color: '#3b82f6', textDecoration: 'none' }}>Terms and Conditions</Link>
+                I agree to the <Link to="/terms" style={{ color: '#3b82f6', textDecoration: 'none' }}>Terms and Conditions</Link>
               </label>
             </div>
 
