@@ -94,7 +94,15 @@ export default function PropertyForm() {
 
   // ── Form submit ───────────────────────────────────────────────────────────
   const submit = async (e) => {
-    e.preventDefault(); setMsg(''); setLoading(true);
+    e.preventDefault(); 
+    setMsg(''); 
+    
+    if (existingImages.length + newFiles.length === 0) {
+      setMsg('Validation failed: You must upload at least one image for your property.');
+      return;
+    }
+    
+    setLoading(true);
     try {
       let propertyId = id;
 
@@ -124,7 +132,12 @@ export default function PropertyForm() {
       setMsg('');
       setShowSuccessModal(true);
     } catch (err) {
-      setMsg(err.response?.data?.message || 'Failed to save property');
+      if (err.response?.data?.errors) {
+        const errorDetails = err.response.data.errors.map(e => e.message).join(', ');
+        setMsg(`${err.response.data.message}: ${errorDetails}`);
+      } else {
+        setMsg(err.response?.data?.message || 'Failed to save property');
+      }
     } finally { setLoading(false); }
   };
 
