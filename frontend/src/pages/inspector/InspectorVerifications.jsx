@@ -4,7 +4,7 @@ import api from '../../api';
 import { showAlert } from '../../utils/alert';
 import { Download, Search, Filter, Eye, Edit, Ban, Star, XCircle } from 'lucide-react';
 
-export default function InspectorHistory() {
+export default function InspectorVerifications() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -22,8 +22,8 @@ export default function InspectorHistory() {
 
   const load = () => {
     setLoading(true);
-    api.get('/admin/properties')
-      .then(r => setHistory(r.data || []))
+    api.get('/inspector/history')
+      .then(r => setHistory(r.data?.inspections || []))
       .catch(() => setHistory([]))
       .finally(() => setLoading(false));
   };
@@ -33,16 +33,17 @@ export default function InspectorHistory() {
   }, []);
 
   // Filter history by search term and status
-  const filtered = history.filter(p => {
+  const filtered = history.filter(i => {
+    const p = i.property || i.Property || {};
     const term = search.toLowerCase();
     const matchSearch = (p.title || '').toLowerCase().includes(term) || 
            (p.host?.name || '').toLowerCase().includes(term) ||
            (p.address || '').toLowerCase().includes(term);
            
     let matchStatus = true;
-    if (statusFilter === 'verified') matchStatus = p.verification_badge;
-    else if (statusFilter === 'rejected') matchStatus = p.verification_status === 'rejected';
-    else if (statusFilter === 'pending') matchStatus = !p.verification_badge && p.verification_status !== 'rejected';
+    if (statusFilter !== 'all') {
+      matchStatus = i.recommendation === statusFilter;
+    }
     
     return matchSearch && matchStatus;
   });
@@ -58,19 +59,21 @@ export default function InspectorHistory() {
 
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Property,Host,Location,Price/Night,Rating,Reviews,Status\n"
-      + filtered.map(p => {
+      + "Property,Host,Location,Price/Night,Rating,Reviews,Your Result,Inspection Date\n"
+      + filtered.map(i => {
+          const p = i.property || i.Property || {};
           const title = `"${(p.title || '').replace(/"/g, '""')}"`;
           const host = `"${(p.host?.name || 'Unknown').replace(/"/g, '""')}"`;
           const address = `"${(p.address || '').replace(/"/g, '""')}"`;
-          const status = p.verification_badge ? 'verified' : p.verification_status === 'rejected' ? 'rejected' : 'pending';
+          const result = i.recommendation || 'pending';
           const reviewsCount = p.Reviews ? p.Reviews.length : 0;
-          return `${title},${host},${address},${p.price_per_night},${p.overall_score || 0},${reviewsCount},${status}`;
+          const date = i.completed_date ? i.completed_date.substring(0, 10) : 'N/A';
+          return `${title},${host},${address},${p.price_per_night},${p.overall_score || 0},${reviewsCount},${result},${date}`;
         }).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "properties_export.csv");
+    link.setAttribute("download", "my_verifications.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -116,8 +119,8 @@ export default function InspectorHistory() {
     <DashboardLayout>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
-          <div className="page-title">Properties Management</div>
-          <div className="page-subtitle">Manage all properties on the platform</div>
+          <div className="page-title">My Verification History</div>
+          <div className="page-subtitle">Detailed record of properties you have inspected</div>
         </div>
         <button onClick={handleExport} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1e3a8a' }}>
           <Download size={14} /> Export
@@ -138,9 +141,9 @@ export default function InspectorHistory() {
             style={{ width: 140, height: 38, border: '1px solid var(--border)', borderRadius: 8, padding: '0 12px', outline: 'none', color: '#374151' }}
           >
             <option value="all">All Status</option>
-            <option value="verified">Verified</option>
-            <option value="pending">Pending</option>
-            <option value="rejected">Rejected</option>
+            <option value="approve">Approved</option>
+            <option value="reject">Rejected</option>
+            <option value="revoked">Revoked</option>
           </select>
           <div style={{ flex: 1, position: 'relative' }}>
             <input 
@@ -157,7 +160,7 @@ export default function InspectorHistory() {
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>Loading...</div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>No properties found.</div>
+          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>No records found.</div>
         ) : (
           <div className="table-wrap">
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -168,12 +171,14 @@ export default function InspectorHistory() {
                   <th style={{ textAlign: 'left', padding: '16px 20px', color: '#1f2937', fontWeight: 700 }}>Location</th>
                   <th style={{ textAlign: 'left', padding: '16px 20px', color: '#1f2937', fontWeight: 700 }}>Price/Night</th>
                   <th style={{ textAlign: 'left', padding: '16px 20px', color: '#1f2937', fontWeight: 700 }}>Rating</th>
-                  <th style={{ textAlign: 'left', padding: '16px 20px', color: '#1f2937', fontWeight: 700 }}>Status</th>
+                  <th style={{ textAlign: 'left', padding: '16px 20px', color: '#1f2937', fontWeight: 700 }}>Your Result</th>
+                  <th style={{ textAlign: 'left', padding: '16px 20px', color: '#1f2937', fontWeight: 700 }}>Inspection Date</th>
                   <th style={{ textAlign: 'left', padding: '16px 20px', color: '#1f2937', fontWeight: 700 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {paginated.map(p => {
+                {paginated.map(i => {
+                  const p = i.property || i.Property || {};
                   const images = p.images || [];
                   let mainImg = 'https://placehold.co/100x70?text=No+Image';
                   if (p.image) {
@@ -186,7 +191,7 @@ export default function InspectorHistory() {
                   const reviews = p.Reviews ? p.Reviews.length : 0;
 
                   return (
-                    <tr key={p.property_id} style={{ borderTop: '1px solid var(--border)' }}>
+                    <tr key={i.inspection_id} style={{ borderTop: '1px solid var(--border)' }}>
                       <td style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <img src={mainImg} alt={p.title} style={{ width: 80, minWidth: 80, height: 56, flexShrink: 0, borderRadius: 6, objectFit: 'cover' }} />
@@ -205,20 +210,23 @@ export default function InspectorHistory() {
                         </div>
                       </td>
                       <td style={{ padding: '16px 20px' }}>
-                        {p.verification_badge ? (
-                          <span className="badge badge-success" style={{ background: '#d1fae5', color: '#059669', padding: '4px 8px' }}>verified</span>
-                        ) : p.verification_status === 'rejected' ? (
-                          <span className="badge badge-error" style={{ background: '#fee2e2', color: '#dc2626', padding: '4px 8px' }}>rejected</span>
+                        {i.recommendation === 'approve' ? (
+                          <span className="badge badge-success" style={{ background: '#d1fae5', color: '#059669', padding: '4px 8px' }}>approved</span>
+                        ) : i.recommendation === 'revoked' ? (
+                          <span className="badge badge-error" style={{ background: '#fef2f2', color: '#991b1b', padding: '4px 8px', border: '1px solid #fca5a5' }}>revoked</span>
                         ) : (
-                          <span className="badge badge-warning" style={{ background: '#fef3c7', color: '#d97706', padding: '4px 8px' }}>pending</span>
+                          <span className="badge badge-error" style={{ background: '#fee2e2', color: '#dc2626', padding: '4px 8px' }}>rejected</span>
                         )}
+                      </td>
+                      <td style={{ padding: '16px 20px', fontSize: 13, color: '#374151' }}>
+                        {i.completed_date ? i.completed_date.substring(0, 10) : 'N/A'}
                       </td>
                       <td style={{ padding: '16px 20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                           <Eye size={20} title="View Property" onClick={() => setViewModal(p)} style={{ cursor: 'pointer', color: '#4b5563' }} />
                           <Edit size={20} title="Edit Notes" onClick={() => { setEditModal(p); setEditNotes(p.recommendations || ''); }} style={{ cursor: 'pointer', color: '#4b5563' }} />
-                          {!p.verification_badge ? (
-                            <Ban size={20} title="Not Verified" style={{ cursor: 'not-allowed', color: '#fca5a5' }} />
+                          {(!p.verification_badge || i.recommendation === 'revoked' || i.recommendation === 'reject') ? (
+                            <Ban size={20} title="Cannot Revoke" style={{ cursor: 'not-allowed', color: '#fca5a5' }} />
                           ) : (
                             <Ban size={20} title="Revoke Badge" onClick={() => { setRevokeModal(p); setRevokeReason(''); }} style={{ cursor: 'pointer', color: '#ef4444' }} />
                           )}
@@ -231,7 +239,7 @@ export default function InspectorHistory() {
             </table>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderTop: '1px solid var(--border)' }}>
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} properties
+                Showing {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} of {filtered.length} records
               </div>
               <div style={{ display: 'flex', gap: 4 }}>
                 <button 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { RefreshCw, AlertTriangle, CheckCircle, DollarSign, Undo2 } from 'lucide-react';
 
 const statusBadge = { completed: 'badge-success', pending: 'badge-warning', failed: 'badge-error', refunded: 'badge-info' };
@@ -73,7 +74,7 @@ export default function PMPayments() {
     try {
       await api.put(`/payments/status/${paymentId}`, { status });
       load();
-    } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const openDisputeModal = (d) => { setDisputeModal(d); setDisputeResolution(''); setActionMsg(''); };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { Link } from 'react-router-dom';
 import { Users, Trash2, Plus, ShieldOff, ShieldCheck, AlertTriangle, LineChart } from 'lucide-react';
 
@@ -34,7 +35,7 @@ export default function AdminUsers() {
         setDeleteModal(null);
         setForceDeleteModal({ user: targetUser, msg: errorMsg });
       } else {
-        alert(errorMsg);
+        showAlert(errorMsg);
       }
     }
   };
@@ -44,11 +45,11 @@ export default function AdminUsers() {
       await api.put(`/admin/users/${id}/suspend`, { reason: suspendReason[id] || 'Policy violation' });
       setShowSuspendFor(null);
       load();
-    } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const unsuspendUser = async (id) => {
-    try { await api.put(`/admin/users/${id}/unsuspend`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    try { await api.put(`/admin/users/${id}/unsuspend`); load(); } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const createStaff = async e => {

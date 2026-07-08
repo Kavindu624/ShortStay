@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 
 export default function AdminComplaints() {
   const [complaints, setComplaints] = useState([]);
@@ -24,7 +25,7 @@ export default function AdminComplaints() {
       setResolutionNote(prev => ({ ...prev, [id]: '' }));
       setExpanded(null);
       load();
-    } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const prioBadge = { high: 'badge-error', medium: 'badge-warning', low: 'badge-info' };

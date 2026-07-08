@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend
@@ -42,10 +43,10 @@ export default function AdminReports() {
       if (data.length > 0) {
         exportToCSV(data, 'full_financial_report.csv');
       } else {
-        alert('No data available for the report.');
+        showAlert('No data available for the report.');
       }
     }
-    catch (err) { console.error(err); alert('Failed to generate report.'); }
+    catch (err) { console.error(err); showAlert('Failed to generate report.'); }
     finally { setGenLoading(false); }
   };
 

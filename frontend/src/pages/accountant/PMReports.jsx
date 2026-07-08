@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
@@ -51,8 +52,8 @@ export default function PMReports() {
 
   const genReport = async () => {
     setGenLoading(true);
-    try { await api.get('/payments/report'); alert('Report generated successfully!'); }
-    catch { alert('Report generated!'); }
+    try { await api.get('/payments/report'); showAlert('Report generated successfully!'); }
+    catch { showAlert('Report generated!'); }
     finally { setGenLoading(false); }
   };
 

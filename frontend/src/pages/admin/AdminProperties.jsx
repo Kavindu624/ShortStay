@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { Check, X, MapPin, UserPlus, ShieldCheck, Eye } from 'lucide-react';
 
 const vBadge = {
@@ -19,6 +20,7 @@ export default function AdminProperties() {
   const [tab, setTab] = useState('all');
   const [assignModal, setAssignModal] = useState(null); // property_id
   const [selectedInspector, setSelectedInspector] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
   const [assignMsg, setAssignMsg] = useState('');
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -37,7 +39,7 @@ export default function AdminProperties() {
 
   const approve = async (id) => {
     try { await api.put(`/admin/properties/${id}/approve`); load(); }
-    catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const openRejectModal = (id) => { setRejectModal(id); setRejectReason(''); };
@@ -47,17 +49,21 @@ export default function AdminProperties() {
       await api.put(`/admin/properties/${rejectModal}/reject`, { reason: rejectReason });
       setRejectModal(null);
       load();
-    } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
-  const openAssignModal = (id) => { setAssignModal(id); setSelectedInspector(''); setAssignMsg(''); };
+  const openAssignModal = (id) => { setAssignModal(id); setSelectedInspector(''); setScheduledDate(''); setAssignMsg(''); };
 
   const assignInspector = async () => {
-    if (!selectedInspector) return;
+    if (!selectedInspector || !scheduledDate) {
+      showAlert('Please select a verifier and a scheduled date.');
+      return;
+    }
     try {
       await api.post('/inspector/assign', {
         property_id: Number(assignModal),
         inspector_id: Number(selectedInspector),
+        scheduled_date: scheduledDate
       });
       setAssignMsg('Inspector assigned successfully!');
       setTimeout(() => { setAssignModal(null); load(); }, 1200);
@@ -95,6 +101,10 @@ export default function AdminProperties() {
                 {inspectors.map(i => <option key={i.user_id} value={i.user_id}>{i.name} ({i.email})</option>)}
               </select>
               {inspectors.length === 0 && <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>No inspectors found. Create staff accounts first.</p>}
+            </div>
+            <div className="form-group">
+              <label className="form-label">Scheduled Date <span style={{color: 'red'}}>*</span></label>
+              <input type="date" className="form-input" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn-primary" onClick={assignInspector} disabled={!selectedInspector}>Assign</button>

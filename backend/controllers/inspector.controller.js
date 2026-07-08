@@ -56,9 +56,12 @@ exports.getInspectionHistory = async (req, res) => {
       },
       include: [{
         model: Property,
-        include: [{ model: User, as: 'host', attributes: ['name'] }]
+        include: [
+          { model: User, as: 'host', attributes: ['name'] },
+          { model: require('../models/Review') }
+        ]
       }],
-      order: [['completed_date', 'DESC'], ['inspection_id', 'DESC']],
+      order: [['inspection_id', 'DESC']],
     });
 
     res.status(200).json({ total: inspections.length, inspections });
@@ -72,19 +75,30 @@ exports.getInspectorDashboard = async (req, res) => {
   try {
     const inspector_id = req.user.user_id;
 
-    const [total, scheduled, completed, approved] = await Promise.all([
+    const { Op } = require('sequelize');
+    const today = new Date().toISOString().split('T')[0];
+
+    const [total, scheduled, completed, approvedToday, rejectedToday] = await Promise.all([
       Inspection.count({ where: { inspector_id } }),
       Inspection.count({ where: { inspector_id, status: 'scheduled' } }),
       Inspection.count({ where: { inspector_id, status: 'completed' } }),
-      // Properties this inspector helped get verified
+      
       Inspection.count({
-        where: { inspector_id, status: 'completed' },
-        include: [{
-          model: Property,
-          where: { verification_badge: true },
-          required: true,
-        }],
+        where: { 
+          inspector_id, 
+          status: 'completed', 
+          recommendation: 'approve',
+          completed_date: today
+        }
       }),
+      Inspection.count({
+        where: { 
+          inspector_id, 
+          status: 'completed', 
+          recommendation: { [Op.in]: ['reject', 'revoked'] },
+          completed_date: today
+        }
+      })
     ]);
 
     const pendingCount = await Property.count({
@@ -99,7 +113,8 @@ exports.getInspectorDashboard = async (req, res) => {
       total_assigned:   total,
       scheduled,
       completed,
-      approved_badges:  approved,
+      approved_today: approvedToday,
+      rejected_today: rejectedToday,
       pending_in_queue: pendingCount,
     });
   } catch (err) {
@@ -372,6 +387,16 @@ exports.revokeVerificationBadge = async (req, res) => {
       'verification_revoked',
       property.property_id
     );
+
+    // Track the revoke action in Inspection history
+    await Inspection.create({
+      property_id: property.property_id,
+      inspector_id: req.user.user_id,
+      completed_date: new Date(),
+      recommendation: 'revoked',
+      notes: reason || 'Safety or compliance standards were not met.',
+      status: 'completed'
+    });
 
     // Email to host
     await sendEmail(

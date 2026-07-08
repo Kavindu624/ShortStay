@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { Calendar, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const statusBadge = { confirmed: 'badge-success', approved: 'badge-info', pending: 'badge-warning', cancelled: 'badge-error' };
@@ -28,17 +29,17 @@ export default function HostBookings() {
   useEffect(load, []);
 
   const approve = async (id) => {
-    try { await api.put(`/bookings/${id}/approve`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    try { await api.put(`/bookings/${id}/approve`); load(); } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const confirmReject = async () => {
     if (!rejectModal) return;
-    try { await api.put(`/bookings/${rejectModal}/reject`); load(); setRejectModal(null); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    try { await api.put(`/bookings/${rejectModal}/reject`); load(); setRejectModal(null); } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const confirmComplete = async () => {
     if (!completeModal) return;
-    try { await api.put(`/bookings/${completeModal}/complete`); load(); setCompleteModal(null); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    try { await api.put(`/bookings/${completeModal}/complete`); load(); setCompleteModal(null); } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   const stats = {

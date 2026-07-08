@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { DollarSign, Clock, CheckCircle, TrendingUp, Download, AlertTriangle } from 'lucide-react';
 
@@ -38,7 +39,7 @@ export default function PMDashboard() {
     try {
       await api.put(`/payments/disputes/${id}/resolve`);
       setDisputes(prev => prev.map(d => d.dispute_id === id ? { ...d, status: 'resolved' } : d));
-    } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   // Build chart from real payments data or fallback to empty

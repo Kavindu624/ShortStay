@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { MapPin, Image as ImageIcon, FileText, CheckCircle, XCircle, Calendar, UploadCloud, FileVideo } from 'lucide-react';
 
 export default function InspectorPending() {
@@ -10,7 +11,6 @@ export default function InspectorPending() {
   const [msg, setMsg] = useState('');
   
   const [photoModal, setPhotoModal] = useState(null);
-  const [docModal, setDocModal] = useState(null);
   
   const [scheduleModal, setScheduleModal] = useState(null);
   const [scheduledDate, setScheduledDate] = useState('');
@@ -35,7 +35,7 @@ export default function InspectorPending() {
   }, []);
 
   const handleSchedule = async () => {
-    if (!scheduledDate) return alert('Please select a date');
+    if (!scheduledDate) return showAlert('Please select a date');
     setSubmitting(true);
     try {
       await api.post('/inspector/schedule', {
@@ -45,11 +45,19 @@ export default function InspectorPending() {
       setMsg('Inspection scheduled successfully!');
       setTimeout(() => { setMsg(''); setScheduleModal(null); load(); }, 1500);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to schedule');
+      showAlert(err.response?.data?.message || 'Failed to schedule');
     } finally { setSubmitting(false); }
   };
 
   const handleConduct = async (result) => {
+    if (!notes || notes.trim() === '') {
+      showAlert('Inspection Notes & Recommendations are required.');
+      return;
+    }
+    if (images.length === 0) {
+      showAlert('At least one evidence photo is required.');
+      return;
+    }
     // Open confirmation modal instead of native confirm
     setConfirmModal({ ...conductModal, result });
   };
@@ -81,7 +89,7 @@ export default function InspectorPending() {
       setSuccessModal({ result });
       load();
     } catch (err) {
-      alert(err.response?.data?.message || 'Submission failed');
+      showAlert(err.response?.data?.message || 'Submission failed');
       setConfirmModal(null);
     } finally { setSubmitting(false); }
   };
@@ -116,6 +124,8 @@ export default function InspectorPending() {
           </div>
         </div>
       )}
+
+
 
       {/* Confirm Action Modal */}
       {confirmModal && (
@@ -168,12 +178,12 @@ export default function InspectorPending() {
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24 }}>Upload evidence and submit your final verdict for <strong>{conductModal.title}</strong>.</p>
             
             <div className="form-group">
-              <label className="form-label">Inspection Notes & Recommendations</label>
+              <label className="form-label">Inspection Notes & Recommendations <span style={{color: 'red'}}>*</span></label>
               <textarea className="form-input" rows={4} placeholder="Describe the condition, safety issues, or positive remarks..." value={notes} onChange={e => setNotes(e.target.value)}></textarea>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Upload Evidence Photos (Max 5)</label>
+              <label className="form-label">Upload Evidence Photos (Max 5) <span style={{color: 'red'}}>*</span></label>
               <div style={{ border: '2px dashed var(--border)', padding: 32, borderRadius: 8, textAlign: 'center', background: '#f8fafc', cursor: 'pointer' }} onClick={() => document.getElementById('evidenceUpload').click()}>
                 <UploadCloud size={32} color="#9ca3af" style={{ margin: '0 auto 12px' }} />
                 <div style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Click to upload images</div>
@@ -181,7 +191,22 @@ export default function InspectorPending() {
                 <input id="evidenceUpload" type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={e => setImages(Array.from(e.target.files).slice(0, 5))} />
               </div>
               {images.length > 0 && (
-                <div style={{ fontSize: 13, color: '#10b981', marginTop: 8, fontWeight: 600 }}>{images.length} images selected.</div>
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {images.map((img, idx) => (
+                      <div key={idx} style={{ position: 'relative', width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                        <img src={URL.createObjectURL(img)} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setImages(images.filter((_, i) => i !== idx)); }}
+                          style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', color: 'white', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <XCircle size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#10b981', marginTop: 8, fontWeight: 600 }}>{images.length} image{images.length > 1 ? 's' : ''} selected.</div>
+                </div>
               )}
             </div>
 
@@ -219,19 +244,7 @@ export default function InspectorPending() {
         </div>
       )}
 
-      {/* Document Modal */}
-      {docModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', padding: 32, borderRadius: 12, width: 400, textAlign: 'center' }}>
-            <FileText size={48} color="#1e3a8a" style={{ marginBottom: 16 }} />
-            <h3 style={{ marginBottom: 8 }}>Documents Verified</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 14 }}>
-              The ownership and identification documents for <strong>{docModal.title}</strong> have been uploaded and automatically verified by the system.
-            </p>
-            <button className="btn-primary" onClick={() => setDocModal(null)} style={{ width: '100%', justifyContent: 'center' }}>Close</button>
-          </div>
-        </div>
-      )}
+
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>Loading...</div>
@@ -264,9 +277,6 @@ export default function InspectorPending() {
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button className="btn-outline" onClick={() => setPhotoModal(p)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12 }}>
                       <ImageIcon size={14} /> View Photos ({images.length})
-                    </button>
-                    <button className="btn-outline" onClick={() => setDocModal(p)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12 }}>
-                      <FileText size={14} /> Documents (3)
                     </button>
                   </div>
                 </div>

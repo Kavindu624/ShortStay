@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { Star, ThumbsUp } from 'lucide-react';
 
 export default function HostReviews() {
@@ -73,7 +74,7 @@ export default function HostReviews() {
       setReplyingTo(null);
       setReplyText('');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to submit reply');
+      showAlert(err.response?.data?.message || 'Failed to submit reply');
     }
   };
 

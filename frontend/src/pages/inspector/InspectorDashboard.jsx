@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 export default function InspectorDashboard() {
   const [stats, setStats] = useState(null);
@@ -51,18 +51,18 @@ export default function InspectorDashboard() {
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Approved Today</span>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <span style={{ fontSize: 24, fontWeight: 800 }}>{stats?.approved_badges || 0}</span>
+                <span style={{ fontSize: 24, fontWeight: 800 }}>{stats?.approved_today || 0}</span>
                 <div style={{ width: 36, height: 36, background: '#059669', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <CheckCircle size={20} color="white" />
                 </div>
               </div>
-              <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>↑ 25% vs last month</span>
+              <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Real-time updates</span>
             </div>
 
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Rejected Today</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Rejected/Revoked Today</span>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <span style={{ fontSize: 24, fontWeight: 800 }}>{(stats?.completed || 0) - (stats?.approved_badges || 0)}</span>
+                <span style={{ fontSize: 24, fontWeight: 800 }}>{stats?.rejected_today || 0}</span>
                 <div style={{ width: 36, height: 36, background: '#1f2937', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <XCircle size={20} color="white" />
                 </div>
@@ -84,16 +84,16 @@ export default function InspectorDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 14 }}>Documents to Check</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Property documents and licenses</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Properties currently under review</div>
                 </div>
-                <div style={{ fontWeight: 700, color: '#1e3a8a', fontSize: 16 }}>{stats?.pending_in_queue ? stats.pending_in_queue * 2 : 0}</div>
+                <div style={{ fontWeight: 700, color: '#1e3a8a', fontSize: 16 }}>{stats?.pending_in_queue || 0}</div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0' }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>Follow-up Required</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Properties needing additional information</div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Scheduled Inspections</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Upcoming on-site property checks</div>
                 </div>
-                <div style={{ fontWeight: 700, color: '#374151', fontSize: 16 }}>2</div>
+                <div style={{ fontWeight: 700, color: '#374151', fontSize: 16 }}>{stats?.scheduled || 0}</div>
               </div>
             </div>
           </div>
@@ -106,21 +106,24 @@ export default function InspectorDashboard() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {history.map(item => {
-                  const isApproved = item.result === 'passed' || item.Property?.verification_badge;
+                  const prop = item.property || item.Property || {};
+                  const isApproved = item.recommendation === 'approve' || prop.verification_badge;
+                  const isRevoked = item.recommendation === 'revoked';
                   return (
                     <div key={item.inspection_id} style={{ 
-                      background: isApproved ? '#ecfdf5' : '#fef2f2', 
-                      borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 
+                      background: isApproved ? '#ecfdf5' : isRevoked ? '#fff1f2' : '#fef2f2', 
+                      border: `1px solid ${isApproved ? '#a7f3d0' : isRevoked ? '#fecdd3' : '#fecaca'}`, 
+                      padding: 16, borderRadius: 8, display: 'flex', gap: 16, alignItems: 'center' 
                     }}>
-                      <div style={{ marginTop: 2 }}>
-                        {isApproved ? <CheckCircle size={16} color="#059669" /> : <XCircle size={16} color="#dc2626" />}
+                      <div style={{ background: 'white', padding: 10, borderRadius: '50%', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                        {isApproved ? <CheckCircle size={20} color="#059669" /> : isRevoked ? <AlertTriangle size={20} color="#e11d48" /> : <XCircle size={20} color="#dc2626" />}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: isApproved ? '#065f46' : '#991b1b' }}>
-                          {isApproved ? 'Approved' : 'Rejected'}: {item.Property?.title || `Property #${item.property_id}`}
+                        <div style={{ fontWeight: 600, fontSize: 13, color: isApproved ? '#065f46' : isRevoked ? '#be123c' : '#991b1b' }}>
+                          {isApproved ? 'Approved' : isRevoked ? 'Revoked' : 'Rejected'}: {prop.title || `Property #${item.property_id}`}
                         </div>
-                        <div style={{ fontSize: 12, color: isApproved ? '#047857' : '#b91c1c', marginTop: 2 }}>
-                          {isApproved ? 'Verified by you' : 'Missing required documentation'} • {item.completed_date?.substring(0, 10)}
+                        <div style={{ fontSize: 12, color: isApproved ? '#047857' : isRevoked ? '#9f1239' : '#b91c1c', marginTop: 2 }}>
+                          {isApproved ? 'Verified by you' : (item.notes || 'No reason provided')} • {item.completed_date?.substring(0, 10)}
                         </div>
                       </div>
                     </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { getImageUrl } from '../../utils';
+import { showAlert } from '../../utils/alert';
 import { Plus, Edit2, Calendar, Trash2, Star, MapPin, CheckCircle2 } from 'lucide-react';
 
 export default function HostListings() {
@@ -23,7 +24,7 @@ export default function HostListings() {
       load(); 
       setDeleteModal(null);
     } catch (err) { 
-      alert(err.response?.data?.message || 'Failed to delete property'); 
+      showAlert(err.response?.data?.message || 'Failed to delete property'); 
     }
   };
 
@@ -33,7 +34,7 @@ export default function HostListings() {
       load(); 
       setShowVerifySuccess(true);
     } catch (err) { 
-      alert(err.response?.data?.message || 'Failed'); 
+      showAlert(err.response?.data?.message || 'Failed'); 
     }
   };
 

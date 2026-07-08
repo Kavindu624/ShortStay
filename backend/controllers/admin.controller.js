@@ -176,7 +176,8 @@ exports.getAllProperties = async (req, res) => {
     const properties = await Property.findAll({
       include: [
         { model: User, as: 'host', attributes: ['name', 'email', 'phone'] },
-        { model: require('../models/PropertyImage'), as: 'images' }
+        { model: require('../models/PropertyImage'), as: 'images' },
+        { model: require('../models/Review') }
       ],
       order: [['property_id', 'DESC']]
     });

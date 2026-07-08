@@ -51,6 +51,7 @@ import AdminSettings from './pages/admin/AdminSettings';
 import InspectorDashboard from './pages/inspector/InspectorDashboard';
 import InspectorPending from './pages/inspector/InspectorPending';
 import InspectorHistory from './pages/inspector/InspectorHistory';
+import InspectorVerifications from './pages/inspector/InspectorVerifications';
 
 // Accountant
 import PMDashboard from './pages/accountant/PMDashboard';
@@ -60,6 +61,7 @@ import PMPayouts from './pages/accountant/PMPayouts';
 
 // Mock role switcher
 import RoleSwitcher from './components/RoleSwitcher';
+import GlobalAlert from './components/GlobalAlert';
 
 const MOCK = import.meta.env.VITE_MOCK_MODE === 'true';
 
@@ -110,6 +112,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <GlobalAlert />
         {MOCK && <RoleSwitcher />}
         <Routes>
           {/* Public */}
@@ -175,6 +178,7 @@ export default function App() {
           <Route path="/inspector/inspections" element={<ProtectedRoute role="verifier"><InspectorDashboard /></ProtectedRoute>} />
           <Route path="/inspector/pending" element={<ProtectedRoute role="verifier"><InspectorPending /></ProtectedRoute>} />
           <Route path="/inspector/history" element={<ProtectedRoute role="verifier"><InspectorHistory /></ProtectedRoute>} />
+          <Route path="/inspector/verifications" element={<ProtectedRoute role="verifier"><InspectorVerifications /></ProtectedRoute>} />
           <Route path="/inspector/settings" element={<ProtectedRoute role="verifier"><GuestSettings /></ProtectedRoute>} />
 
           {/* Accountant */}

@@ -39,6 +39,7 @@ const menuByRole = {
     { label: 'Dashboard', icon: LayoutDashboard, path: '/inspector/inspections' },
     { label: 'Verification Queue', icon: ShieldCheck, path: '/inspector/pending' },
     { label: 'Properties', icon: Building2, path: '/inspector/history' },
+    { label: 'My Verifications', icon: ClipboardList, path: '/inspector/verifications' },
     { label: 'Settings', icon: Settings, path: '/inspector/settings' },
   ],
   accountant: [
@@ -74,14 +75,10 @@ export default function Sidebar() {
       display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0, zIndex: 100
     }}>
       {/* Logo */}
-      <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ background: 'var(--primary)', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Building2 size={20} color="white" />
-          </div>
-          <span style={{ fontWeight: 800, fontSize: 18, color: 'var(--primary)' }}>ShortStay</span>
+      <div style={{ padding: '24px 16px 20px', borderBottom: '1px solid var(--border)', textAlign: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <img src="/logo.png" alt="ShortStay Logo" style={{ height: 90, objectFit: 'contain' }} />
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6, paddingLeft: 2 }}>{panelLabel[user?.role] || ''}</div>
       </div>
 
       {/* Nav */}

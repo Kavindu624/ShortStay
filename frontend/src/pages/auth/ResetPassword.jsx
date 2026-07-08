@@ -53,9 +53,8 @@ export default function ResetPassword() {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f6fa', display: 'flex', flexDirection: 'column' }}>
       <nav style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '0 48px', height: 64, display: 'flex', alignItems: 'center' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ background: 'var(--primary)', borderRadius: 8, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Building2 size={20} color="white" /></div>
-          <span style={{ fontWeight: 800, fontSize: 20, color: 'var(--primary)' }}>ShortStay</span>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <img src="/logo.png" alt="ShortStay Logo" style={{ height: 42 }} />
         </Link>
       </nav>
 
@@ -72,9 +71,9 @@ export default function ResetPassword() {
             <>
               <h2 style={{ fontSize: 26, fontWeight: 800, marginBottom: 8, textAlign: 'center' }}>Reset Password</h2>
               <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 13, textAlign: 'center' }}>Create a new strong password for your account.</p>
-              
+
               {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
-              
+
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#4b5563' }}>New Password</label>

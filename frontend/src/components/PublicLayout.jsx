@@ -27,14 +27,7 @@ export default function PublicLayout({ children }) {
       }}>
         {/* Logo */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-          <div style={{
-            background: 'var(--primary)', borderRadius: 8,
-            width: 36, height: 36,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Building2 size={20} color="white" />
-          </div>
-          <span style={{ fontWeight: 800, fontSize: 18, color: 'var(--primary)' }}>ShortStay</span>
+          <img src="/logo.png" alt="ShortStay Logo" style={{ height: 42 }} />
         </Link>
 
         {/* Actions */}

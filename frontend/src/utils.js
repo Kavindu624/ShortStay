@@ -1,4 +1,5 @@
 // ─── Shared utilities ─────────────────────────────────────────────────────────
+import { showAlert } from './utils/alert';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -39,7 +40,7 @@ export function getProfileUrl(filename) {
  */
 export function exportToCSV(data, filename) {
   if (!data || !data.length) {
-    alert('No data to export.');
+    showAlert('No data to export.');
     return;
   }
   const headers = Object.keys(data[0]).join(',');

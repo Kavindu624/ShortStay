@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { DollarSign, Clock, CheckCircle, TrendingUp, Play, RefreshCw, Filter } from 'lucide-react';
 
 const statusBadge = { pending: 'badge-warning', processed: 'badge-success', failed: 'badge-error' };
@@ -38,7 +39,7 @@ export default function PMPayouts() {
     try {
       await api.post(`/payouts/process/${payoutId}`);
       load();
-    } catch (err) { alert(err.response?.data?.message || 'Failed to process payout'); }
+    } catch (err) { showAlert(err.response?.data?.message || 'Failed to process payout'); }
     finally { setProcessing(prev => ({ ...prev, [payoutId]: false })); }
   };
 

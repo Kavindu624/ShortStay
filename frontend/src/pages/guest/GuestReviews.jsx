@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
+import { showAlert } from '../../utils/alert';
 import { Star, Pencil, Trash2, Plus, X, AlertTriangle } from 'lucide-react';
 
 function StarRating({ value, onChange, readonly }) {
@@ -90,7 +91,7 @@ export default function GuestReviews() {
       await api.delete(`/reviews/${deleteModal}`);
       load();
       setDeleteModal(null);
-    } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+    } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
   };
 
   return (
