@@ -57,7 +57,7 @@ router.get('/summary', auth, role('accountant'), payoutController.getCommissionS
  *       403:
  *         description: Forbidden — accountant only
  */
-router.get('/', auth, role('accountant'), payoutController.getAllPayouts);
+router.get('/', auth, role('accountant', 'admin'), payoutController.getAllPayouts);
 
 /**
  * @swagger

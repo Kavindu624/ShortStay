@@ -136,6 +136,8 @@ exports.submitInspection = async (req, res) => {
   try {
     const { property_id, scheduled_date, overall_score, recommendation, notes, result } = req.body;
 
+    const finalRec = recommendation || (result === 'passed' ? 'approve' : 'reject');
+
     const property = await Property.findByPk(property_id);
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
@@ -150,7 +152,7 @@ exports.submitInspection = async (req, res) => {
       await inspection.update({
         completed_date: new Date(),
         overall_score,
-        recommendation,
+        recommendation: finalRec,
         notes:          notes || null,
         status:         'completed',
       });
@@ -161,7 +163,7 @@ exports.submitInspection = async (req, res) => {
         scheduled_date,
         completed_date: new Date(),
         overall_score,
-        recommendation,
+        recommendation: finalRec,
         notes:          notes || null,
         status:         'completed',
       });

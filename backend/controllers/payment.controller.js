@@ -18,7 +18,7 @@
  *  Public (Stripe): POST /webhook          — Stripe webhook handler
  */
 
-const { Payment, Booking, Property, User, Dispute } = require('../models/index');
+const { Payment, Booking, Property, User, Dispute, Payout } = require('../models/index');
 const { Op }       = require('sequelize');
 const sendEmail    = require('../utils/sendEmail');
 const {
@@ -524,13 +524,19 @@ exports.getAllPayments = async (req, res) => {
 
     const { count, rows: payments } = await Payment.findAndCountAll({
       where,
-      include: [{
-        model: Booking,
-        include: [
-          { model: Property, as: 'property', attributes: ['title', 'address'] },
-          { model: User,     as: 'guest',    attributes: ['name', 'email'] },
-        ],
-      }],
+      include: [
+        {
+          model: Booking,
+          include: [
+            { 
+              model: Property, as: 'property', attributes: ['title', 'address'],
+              include: [{ model: User, as: 'host', attributes: ['name', 'email'] }]
+            },
+            { model: User,     as: 'guest',    attributes: ['name', 'email'] },
+          ],
+        },
+        { model: Payout }
+      ],
       order:  [['payment_id', 'DESC']],
       limit:  Math.min(parseInt(limit), 100),
       offset,

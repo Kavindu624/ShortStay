@@ -41,7 +41,7 @@ export default function PropertyForm() {
       });
       setExistingImages(p.images || []);
     }).catch(() => {});
-  }, [id]);
+  }, [id, isEdit]);
 
   // Revoke object URLs on unmount to free memory
   useEffect(() => {

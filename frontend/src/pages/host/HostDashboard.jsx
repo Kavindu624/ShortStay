@@ -31,7 +31,7 @@ export default function HostDashboard() {
     ? stats.monthly_earnings.map(m => ({ month: m.month || m.period, earnings: Number(m.amount || m.earnings || 0) }))
     : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map(month => ({
         month,
-        earnings: Math.round(Number(totalEarnings) / 6 * (0.6 + Math.random() * 0.8)),
+        earnings: Math.round(Number(totalEarnings) / 6 * (0.6 + (Math.abs(month.charCodeAt(0) % 10) / 10) * 0.8)),
       }));
 
   const revenueGrowth = stats?.revenue_growth ?? null;

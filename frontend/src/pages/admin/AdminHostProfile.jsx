@@ -53,13 +53,13 @@ export default function AdminHostProfile() {
   }
 
   const totalEarnings = payouts
-    .filter(p => p.status === 'paid' || p.payout_status === 'paid')
-    .reduce((sum, p) => sum + Number(p.amount), 0);
+    .filter(p => p.status === 'completed')
+    .reduce((sum, p) => sum + Number(p.payout_amount), 0);
 
-  const activeListings = properties.filter(p => p.is_active).length;
+  const activeListings = properties.filter(p => p.is_approved).length;
   
   // Calculate average rating
-  const ratings = properties.map(p => Number(p.average_rating || 0)).filter(r => r > 0);
+  const ratings = properties.map(p => Number(p.overall_score || 0)).filter(r => r > 0);
   const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'N/A';
 
   return (
@@ -124,7 +124,7 @@ export default function AdminHostProfile() {
               <div key={p.property_id} style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
                 <div style={{ height: 160, background: '#f3f4f6', position: 'relative' }}>
                   {p.images && p.images.length > 0 ? (
-                    <img src={p.images[0].startsWith('http') ? p.images[0] : `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/properties/${p.images[0]}`}
+                    <img src={p.images[0].image_url?.startsWith('http') ? p.images[0].image_url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/uploads/properties/${p.images[0].image_url}`}
                       alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>No Image</div>
@@ -133,11 +133,11 @@ export default function AdminHostProfile() {
                 <div style={{ padding: 16 }}>
                   <h4 style={{ fontWeight: 600, fontSize: 15, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</h4>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {p.city}, {p.country}
+                    {p.address}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
-                      <Star size={14} color="#f59e0b" fill="#f59e0b" /> {p.average_rating || 'New'}
+                      <Star size={14} color="#f59e0b" fill="#f59e0b" /> {p.overall_score || 'New'}
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>Rs.{p.price_per_night}/night</div>
                   </div>

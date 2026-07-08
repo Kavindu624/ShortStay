@@ -4,7 +4,7 @@ import api from '../../api';
 import { Star, ThumbsUp } from 'lucide-react';
 
 export default function HostReviews() {
-  const [properties, setProperties] = useState([]);
+  const [, setProperties] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [replyingTo, setReplyingTo] = useState(null);
@@ -27,7 +27,7 @@ export default function HostReviews() {
             });
             allReviews.push(...rv);
           }
-        } catch (e) {
+        } catch (e) { void(e);
           // ignore
         }
       }

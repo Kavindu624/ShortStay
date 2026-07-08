@@ -36,8 +36,16 @@ export default function AdminReports() {
 
   const genReport = async () => {
     setGenLoading(true);
-    try { await api.get('/payments/report'); alert('Report generated successfully!'); }
-    catch { alert('Report generated!'); }
+    try { 
+      const res = await api.get('/payments/report'); 
+      const data = res.data?.payments || [];
+      if (data.length > 0) {
+        exportToCSV(data, 'full_financial_report.csv');
+      } else {
+        alert('No data available for the report.');
+      }
+    }
+    catch (err) { console.error(err); alert('Failed to generate report.'); }
     finally { setGenLoading(false); }
   };
 
@@ -89,11 +97,11 @@ export default function AdminReports() {
       {/* Quick report links */}
       <div className="grid-3" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Revenue Report', sub: 'Monthly financial breakdown', icon: '📄', color: '#dbeafe' },
-          { label: 'Occupancy Report', sub: 'Property utilization rates', icon: '📈', color: '#d1fae5' },
-          { label: 'Host Performance', sub: 'Top earning hosts', icon: '📋', color: '#fef3c7' },
+          { label: 'Revenue Report', sub: 'Monthly financial breakdown', icon: '📄', color: '#dbeafe', action: () => exportToCSV(chartMonthly, 'monthly_revenue_report.csv') },
+          { label: 'Occupancy Report', sub: 'Property utilization rates', icon: '📈', color: '#d1fae5', action: () => exportToCSV(byProp, 'occupancy_report.csv') },
+          { label: 'Host Performance', sub: 'Top earning hosts', icon: '📋', color: '#fef3c7', action: () => exportToCSV(hosts, 'host_performance_report.csv') },
         ].map(r => (
-          <div key={r.label} className="card" style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+          <div key={r.label} className="card" onClick={r.action} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
             <div style={{ width: 44, height: 44, background: r.color, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{r.icon}</div>
             <div><div style={{ fontWeight: 700, fontSize: 14 }}>{r.label}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.sub}</div></div>
           </div>

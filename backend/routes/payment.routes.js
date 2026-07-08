@@ -279,7 +279,7 @@ router.get('/pending', auth, role('accountant'), pc.getPendingPayments);
  *       200:
  *         description: List of all payments
  */
-router.get('/', auth, role('accountant'), pc.getAllPayments);
+router.get('/', auth, role('accountant', 'admin'), pc.getAllPayments);
 
 /**
  * @swagger
@@ -293,7 +293,7 @@ router.get('/', auth, role('accountant'), pc.getAllPayments);
  *       200:
  *         description: Payment report data
  */
-router.get('/report', auth, role('accountant'), pc.generateReport);
+router.get('/report', auth, role('admin', 'accountant'), pc.generateReport);
 
 /**
  * @swagger

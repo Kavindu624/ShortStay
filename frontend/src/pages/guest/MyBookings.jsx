@@ -103,7 +103,7 @@ export default function MyBookings() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 24 }}>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600 }}>Booking ID</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)' }}>BK-{new Date(b.created_at || Date.now()).getFullYear()}-{String(b.booking_id).padStart(3, '0')}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-main)' }}>BK-{new Date(b.created_at || new Date('2025-01-01').getTime()).getFullYear()}-{String(b.booking_id).padStart(3, '0')}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, fontWeight: 600 }}>Check-in</div>

@@ -29,7 +29,10 @@ export default function InspectorPending() {
       .catch(() => setProperties([]))
       .finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSchedule = async () => {
     if (!scheduledDate) return alert('Please select a date');

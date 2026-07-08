@@ -25,7 +25,10 @@ export default function InspectorHistory() {
       .catch(() => setHistory([]))
       .finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Filter history by search term
   const filtered = history.filter(p => {
@@ -40,7 +43,9 @@ export default function InspectorHistory() {
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Reset to page 1 on search
-  useEffect(() => { setCurrentPage(1); }, [search]);
+  useEffect(() => { setCurrentPage(1); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   const handleEditNotes = async () => {
     if (!editNotes.trim()) return;
@@ -52,7 +57,7 @@ export default function InspectorHistory() {
       setMsg('Verification notes updated successfully!');
       setEditModal(null);
       load();
-    } catch (err) {
+    } catch (err) { void(err);
       alert('Failed to update notes');
     } finally {
       setSubmitting(false);
@@ -70,7 +75,7 @@ export default function InspectorHistory() {
       setMsg('Verification badge revoked successfully!');
       setRevokeModal(null);
       load();
-    } catch (err) {
+    } catch (err) { void(err);
       alert('Failed to revoke badge');
     } finally {
       setSubmitting(false);

@@ -18,17 +18,17 @@ export default function AdminVerifications() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const pendingApprovals = stats?.property_stats?.pending_approvals ?? 0;
-  const activeInspections = stats?.active_inspections ?? 0;
+  const pendingApprovals = stats?.property_stats?.pending_verification ?? 0;
+  const activeInspections = inspections.filter(i => i.status === 'scheduled' || i.status === 'in_progress').length;
   
   // Calculate today's stats from inspections
   const today = new Date().toDateString();
   const approvedToday = inspections.filter(i => 
-    i.recommendation === 'approve' && new Date(i.created_at).toDateString() === today
+    i.recommendation === 'approve' && new Date(i.completed_date || i.scheduled_date).toDateString() === today
   ).length;
   
   const rejectedToday = inspections.filter(i => 
-    i.recommendation === 'reject' && new Date(i.created_at).toDateString() === today
+    i.recommendation === 'reject' && new Date(i.completed_date || i.scheduled_date).toDateString() === today
   ).length;
 
   return (
@@ -104,7 +104,7 @@ export default function AdminVerifications() {
                     {isApproved ? 'Approved' : 'Rejected'}: {i.Property?.title || `Property #${i.property_id}`}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                    Verified by {i.inspector?.name || 'Unknown'} • {new Date(i.created_at).toLocaleString()}
+                    Verified by {i.inspector?.name || 'Unknown'} • {new Date(i.completed_date || i.scheduled_date).toLocaleDateString()}
                   </div>
                 </div>
                 {i.notes && (

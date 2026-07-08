@@ -59,7 +59,7 @@ function StarRating({ count = 5 }) {
 function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
 
   useEffect(() => {
     // ── Backend integration point ──────────────────────────────
