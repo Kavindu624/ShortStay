@@ -177,7 +177,8 @@ exports.getAllProperties = async (req, res) => {
       include: [
         { model: User, as: 'host', attributes: ['name', 'email', 'phone'] },
         { model: require('../models/PropertyImage'), as: 'images' }
-      ]
+      ],
+      order: [['property_id', 'DESC']]
     });
     res.status(200).json(properties);
   } catch (err) {
