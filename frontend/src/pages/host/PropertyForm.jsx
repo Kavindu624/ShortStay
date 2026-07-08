@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { getImageUrl } from '../../utils';
-import { ArrowLeft, Upload, X, Star, ImagePlus } from 'lucide-react';
+import { ArrowLeft, Upload, X, Star, ImagePlus, CheckCircle2 } from 'lucide-react';
 
 export default function PropertyForm() {
   const { id } = useParams();
@@ -16,6 +16,7 @@ export default function PropertyForm() {
   });
   const [msg, setMsg]         = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // ── Multi-image state ─────────────────────────────────────────────────────
   // newFiles: File[] — images the host picked but not yet uploaded
@@ -120,8 +121,8 @@ export default function PropertyForm() {
         }
       }
 
-      setMsg(isEdit ? 'Property updated!' : 'Property created! It will be visible after admin approval.');
-      setTimeout(() => nav('/host/listings'), 1800);
+      setMsg('');
+      setShowSuccessModal(true);
     } catch (err) {
       setMsg(err.response?.data?.message || 'Failed to save property');
     } finally { setLoading(false); }
@@ -329,6 +330,28 @@ export default function PropertyForm() {
           </form>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '40px 32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+              <CheckCircle2 size={64} color="#10b981" />
+            </div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12, color: '#111827' }}>
+              {isEdit ? 'Property Updated!' : 'Property Created!'}
+            </h2>
+            <p style={{ color: '#4b5563', fontSize: 15, marginBottom: 32, lineHeight: 1.5 }}>
+              {isEdit 
+                ? 'Your property details and images have been successfully updated.' 
+                : 'Your new property has been submitted and will be visible to guests after admin approval.'}
+            </p>
+            <button className="btn-primary" onClick={() => nav('/host/listings')} style={{ width: '100%', justifyContent: 'center', padding: 12, fontSize: 15 }}>
+              Return to Listings
+            </button>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

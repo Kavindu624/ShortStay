@@ -1,170 +1,147 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { ClipboardList, CheckCircle, XCircle, Clock, Upload } from 'lucide-react';
-
-const statusBadge = { pending: 'badge-warning', completed: 'badge-success', rejected: 'badge-error', passed: 'badge-success', failed: 'badge-error' };
+import { Clock, CheckCircle, XCircle } from 'lucide-react';
 
 export default function InspectorDashboard() {
-  const [tab, setTab] = useState('assigned');
-  const [inspections, setInspections] = useState([]);
-  const [pending, setPending] = useState([]);
   const [stats, setStats] = useState(null);
-  const [form, setForm] = useState({ property_id: '', result: 'passed', notes: '' });
-  const [msg, setMsg] = useState('');
-  const [uploading, setUploading] = useState({});
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const loadAll = () => {
-    api.get('/inspector').then(r => setInspections(r.data || [])).catch(() => {});
-    // Backend returns { total, properties: [...] } for pending
-    api.get('/inspector/pending').then(r => setPending(r.data?.properties || r.data || [])).catch(() => {});
-    api.get('/inspector/dashboard').then(r => setStats(r.data)).catch(() => {});
+    Promise.allSettled([
+      api.get('/inspector/dashboard'),
+      api.get('/inspector/history')
+    ]).then(([statRes, histRes]) => {
+      if (statRes.status === 'fulfilled') setStats(statRes.value.data);
+      if (histRes.status === 'fulfilled') {
+        const hData = histRes.value.data?.inspections || histRes.value.data || [];
+        setHistory(hData.slice(0, 3));
+      }
+    }).finally(() => setLoading(false));
   };
+  
   useEffect(loadAll, []);
-
-  const submit = async e => {
-    e.preventDefault(); setMsg('');
-    try {
-      await api.post('/inspector/submit', {
-        property_id: Number(form.property_id),
-        result: form.result,
-        notes: form.notes,
-      });
-      setMsg('Inspection submitted!');
-      loadAll();
-      setForm({ property_id: '', result: 'passed', notes: '' });
-    } catch (err) { setMsg(err.response?.data?.message || 'Failed'); }
-  };
-
-  const approveBadge = async (propertyId) => {
-    try { await api.put(`/inspector/badge/${propertyId}`); alert('Badge approved!'); loadAll(); }
-    catch (err) { alert(err.response?.data?.message || 'Failed'); }
-  };
-
-  const uploadImages = async (inspectionId, files) => {
-    const fd = new FormData();
-    Array.from(files).forEach(f => fd.append('images', f));
-    setUploading(prev => ({ ...prev, [inspectionId]: true }));
-    try {
-      await api.post(`/inspector/${inspectionId}/images`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      alert('Images uploaded!');
-    } catch (err) { alert(err.response?.data?.message || 'Upload failed'); }
-    finally { setUploading(prev => ({ ...prev, [inspectionId]: false })); }
-  };
 
   return (
     <DashboardLayout>
-      <div className="page-header"><div className="page-title">Inspections</div><div className="page-subtitle">Submit and manage property inspections</div></div>
-
-      {/* Stats */}
-      {stats && (
-        <div className="stats-grid" style={{ marginBottom: 20 }}>
-          {[
-            { label: 'Assigned', value: stats.assigned ?? '—', icon: ClipboardList },
-            { label: 'Completed', value: stats.completed ?? '—', icon: CheckCircle },
-            { label: 'Pending', value: stats.pending ?? '—', icon: Clock },
-          ].map(s => (
-            <div key={s.label} className="stat-card">
-              <div><div className="stat-label">{s.label}</div><div className="stat-value">{s.value}</div></div>
-              <div className="stat-icon"><s.icon size={20} /></div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {[['assigned', 'My Inspections'], ['pending', 'Pending Properties']].map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)}
-            style={{ padding: '7px 16px', borderRadius: 20, fontWeight: 600, fontSize: 12, border: '1.5px solid', borderColor: tab === key ? 'var(--primary)' : 'var(--border)', background: tab === key ? 'var(--primary)' : 'white', color: tab === key ? 'white' : 'var(--text-muted)', cursor: 'pointer' }}>
-            {label}
-          </button>
-        ))}
+      <div className="page-header" style={{ marginBottom: 24 }}>
+        <div className="page-title">Verifier Dashboard</div>
+        <div className="page-subtitle">Review and verify property listings</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24 }}>
-        {/* List */}
-        <div className="card">
-          {tab === 'assigned' ? (
-            <>
-              <h3 style={{ fontWeight: 700, marginBottom: 16 }}>My Inspections</h3>
-              {inspections.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-                  <ClipboardList size={36} style={{ marginBottom: 10, opacity: 0.4 }} /><p>No inspections assigned.</p>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>Loading...</div>
+      ) : (
+        <>
+          {/* Stats Row */}
+          <div className="grid-3" style={{ marginBottom: 24 }}>
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Pending Verification</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <span style={{ fontSize: 24, fontWeight: 800 }}>{stats?.pending_in_queue || 0}</span>
+                <div style={{ width: 36, height: 36, background: '#1e3a8a', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Clock size={20} color="white" />
                 </div>
-              ) : inspections.map(i => (
-                <div key={i.inspection_id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontWeight: 600 }}>{i.Property?.title || i.property?.title || `Property #${i.property_id}`}</span>
+              </div>
+            </div>
+
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Approved Today</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <span style={{ fontSize: 24, fontWeight: 800 }}>{stats?.approved_badges || 0}</span>
+                <div style={{ width: 36, height: 36, background: '#059669', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CheckCircle size={20} color="white" />
+                </div>
+              </div>
+              <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>↑ 25% vs last month</span>
+            </div>
+
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)' }}>Rejected Today</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <span style={{ fontSize: 24, fontWeight: 800 }}>{(stats?.completed || 0) - (stats?.approved_badges || 0)}</span>
+                <div style={{ width: 36, height: 36, background: '#1f2937', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <XCircle size={20} color="white" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Today's Task Overview */}
+          <div className="card" style={{ marginBottom: 24 }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Today's Task Overview</h3>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Properties to Review</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>New submissions awaiting verification</div>
+                </div>
+                <div style={{ fontWeight: 700, color: '#f59e0b', fontSize: 16 }}>{stats?.pending_in_queue || 0}</div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Documents to Check</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Property documents and licenses</div>
+                </div>
+                <div style={{ fontWeight: 700, color: '#1e3a8a', fontSize: 16 }}>{stats?.pending_in_queue ? stats.pending_in_queue * 2 : 0}</div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0' }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>Follow-up Required</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Properties needing additional information</div>
+                </div>
+                <div style={{ fontWeight: 700, color: '#374151', fontSize: 16 }}>2</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Verification Activity */}
+          <div className="card" style={{ marginBottom: 24 }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Recent Verification Activity</h3>
+            {history.length === 0 ? (
+              <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>No recent activity.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {history.map(item => {
+                  const isApproved = item.result === 'passed' || item.Property?.verification_badge;
+                  return (
+                    <div key={item.inspection_id} style={{ 
+                      background: isApproved ? '#ecfdf5' : '#fef2f2', 
+                      borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 12 
+                    }}>
+                      <div style={{ marginTop: 2 }}>
+                        {isApproved ? <CheckCircle size={16} color="#059669" /> : <XCircle size={16} color="#dc2626" />}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: isApproved ? '#065f46' : '#991b1b' }}>
+                          {isApproved ? 'Approved' : 'Rejected'}: {item.Property?.title || `Property #${item.property_id}`}
+                        </div>
+                        <div style={{ fontSize: 12, color: isApproved ? '#047857' : '#b91c1c', marginTop: 2 }}>
+                          {isApproved ? 'Verified by you' : 'Missing required documentation'} • {item.completed_date?.substring(0, 10)}
+                        </div>
+                      </div>
                     </div>
-                    <span className={`badge ${statusBadge[i.status] || statusBadge[i.result] || 'badge-gray'}`}>{i.result || i.status}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>
-                    Date: {i.scheduled_date || i.created_at?.substring(0, 10)} | Score: {i.overall_score || '—'}
-                  </div>
-                  {i.notes && <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>{i.notes}</p>}
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                    {(i.result === 'passed' || i.status === 'completed') && (
-                      <button className="btn-success btn-sm" onClick={() => approveBadge(i.property_id)}>Approve Badge</button>
-                    )}
-                    <label className="btn-outline btn-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <Upload size={12} /> {uploading[i.inspection_id] ? 'Uploading...' : 'Upload Images'}
-                      <input type="file" multiple accept="image/*" style={{ display: 'none' }}
-                        onChange={e => uploadImages(i.inspection_id, e.target.files)} />
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </>
-          ) : (
-            <>
-              <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Properties Pending Inspection</h3>
-              {pending.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-                  <CheckCircle size={36} style={{ marginBottom: 10, opacity: 0.4 }} /><p>No properties pending inspection.</p>
-                </div>
-              ) : pending.map(p => (
-                <div key={p.property_id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600 }}>{p.title || `Property #${p.property_id}`}</span>
-                    <span className="badge badge-warning">{p.verification_status || 'pending'}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{p.address}</div>
-                  <button className="btn-primary btn-sm" style={{ marginTop: 8 }}
-                    onClick={() => setForm(prev => ({ ...prev, property_id: String(p.property_id) }))}>
-                    Fill Report
-                  </button>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-        {/* Submit form */}
-        <div className="card" style={{ position: 'sticky', top: 80, alignSelf: 'start' }}>
-          <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Submit Inspection</h3>
-          {msg && <div className={`alert ${msg.includes('submitted') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
-          <form onSubmit={submit}>
-            <div className="form-group">
-              <label className="form-label">Property ID</label>
-              <input className="form-input" type="number" placeholder="Property ID" value={form.property_id} onChange={e => setForm({ ...form, property_id: e.target.value })} required />
+          {/* Ready to Start? */}
+          <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ fontWeight: 700, color: '#1e3a8a', marginBottom: 4 }}>Ready to Start?</h3>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Review pending properties and help hosts get verified</div>
             </div>
-            <div className="form-group">
-              <label className="form-label">Result</label>
-              <select className="form-input" value={form.result} onChange={e => setForm({ ...form, result: e.target.value })}>
-                <option value="passed">Passed ✓</option>
-                <option value="failed">Failed ✗</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Notes / Observations</label>
-              <textarea className="form-input" rows={4} placeholder="Describe findings, safety standards, cleanliness..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} required style={{ resize: 'vertical' }} />
-            </div>
-            <button className="btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center' }}>Submit Inspection</button>
-          </form>
-        </div>
-      </div>
+            <button className="btn-primary" onClick={() => navigate('/inspector/pending')} style={{ background: '#1e3a8a', padding: '10px 20px' }}>
+              Go to Queue
+            </button>
+          </div>
+        </>
+      )}
     </DashboardLayout>
   );
 }

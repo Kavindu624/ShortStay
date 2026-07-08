@@ -6,7 +6,7 @@ const ROLES = [
   { key: 'admin',           label: '🛡️ Admin',            path: '/admin/dashboard' },
   { key: 'guest',           label: '🏠 Guest',             path: '/guest/browse' },
   { key: 'host',            label: '🏡 Host',              path: '/host/listings' },
-  { key: 'verifier', label: '🔍 Inspector',         path: '/inspector/inspections' },
+  { key: 'verifier', label: '🔍 Verifier',         path: '/inspector/inspections' },
   { key: 'accountant', label: '💳 Accountant',  path: '/pm/dashboard' },
 ];
 

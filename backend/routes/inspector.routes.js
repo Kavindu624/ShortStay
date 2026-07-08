@@ -101,6 +101,32 @@ router.post('/submit', auth, role('verifier'), inspectorController.submitInspect
 
 /**
  * @swagger
+ * /api/inspector/schedule:
+ *   post:
+ *     summary: Claim and schedule an inspection for a property
+ *     tags: [Inspector]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [property_id, scheduled_date]
+ *             properties:
+ *               property_id: { type: integer, example: 3 }
+ *               scheduled_date: { type: string, format: date }
+ *     responses:
+ *       201:
+ *         description: Inspection scheduled
+ *       403:
+ *         description: Forbidden — verifier only
+ */
+router.post('/schedule', auth, role('verifier'), inspectorController.scheduleInspection);
+
+/**
+ * @swagger
  * /api/inspector/badge/{property_id}:
  *   put:
  *     summary: Approve a verified badge for a property
@@ -119,6 +145,63 @@ router.post('/submit', auth, role('verifier'), inspectorController.submitInspect
  *         description: Forbidden — verifier only
  */
 router.put('/badge/:property_id', auth, role('verifier'), inspectorController.approveBadge);
+
+/**
+ * @swagger
+ * /api/inspector/properties/{id}/notes:
+ *   put:
+ *     summary: Edit verification notes for a property
+ *     tags: [Inspector]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [recommendations]
+ *             properties:
+ *               recommendations: { type: string }
+ *               overall_score: { type: number }
+ *     responses:
+ *       200:
+ *         description: Verification notes updated
+ */
+router.put('/properties/:id/notes', auth, role('verifier'), inspectorController.editVerificationNotes);
+
+/**
+ * @swagger
+ * /api/inspector/properties/{id}/revoke:
+ *   put:
+ *     summary: Revoke verification badge from a property
+ *     tags: [Inspector]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [reason]
+ *             properties:
+ *               reason: { type: string }
+ *     responses:
+ *       200:
+ *         description: Verification badge revoked
+ */
+router.put('/properties/:id/revoke', auth, role('verifier'), inspectorController.revokeVerificationBadge);
 
 /**
  * @swagger

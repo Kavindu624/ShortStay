@@ -38,9 +38,12 @@ import HostPayouts from './pages/host/HostPayouts';
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminHostProfile from './pages/admin/AdminHostProfile';
 import AdminProperties from './pages/admin/AdminProperties';
 import AdminComplaints from './pages/admin/AdminComplaints';
+import AdminVerifications from './pages/admin/AdminVerifications';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminBookings from './pages/admin/AdminBookings';
 import AdminReports from './pages/admin/AdminReports';
 import AdminSettings from './pages/admin/AdminSettings';
 
@@ -158,9 +161,11 @@ export default function App() {
           {/* Admin */}
           <Route path="/admin/dashboard" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute>} />
+          <Route path="/admin/users/host/:id" element={<ProtectedRoute role="admin"><AdminHostProfile /></ProtectedRoute>} />
           <Route path="/admin/properties" element={<ProtectedRoute role="admin"><AdminProperties /></ProtectedRoute>} />
+          <Route path="/admin/verifications" element={<ProtectedRoute role="admin"><AdminVerifications /></ProtectedRoute>} />
           <Route path="/admin/complaints" element={<ProtectedRoute role="admin"><AdminComplaints /></ProtectedRoute>} />
-          <Route path="/admin/bookings" element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
+          <Route path="/admin/bookings" element={<ProtectedRoute role="admin"><AdminBookings /></ProtectedRoute>} />
           <Route path="/admin/payments" element={<ProtectedRoute role="admin"><AdminPayments /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute role="admin"><AdminReports /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute role="admin"><AdminSettings /></ProtectedRoute>} />
@@ -170,7 +175,7 @@ export default function App() {
           <Route path="/inspector/inspections" element={<ProtectedRoute role="verifier"><InspectorDashboard /></ProtectedRoute>} />
           <Route path="/inspector/pending" element={<ProtectedRoute role="verifier"><InspectorPending /></ProtectedRoute>} />
           <Route path="/inspector/history" element={<ProtectedRoute role="verifier"><InspectorHistory /></ProtectedRoute>} />
-          <Route path="/inspector/settings" element={<ProtectedRoute role="verifier"><InspectorDashboard /></ProtectedRoute>} />
+          <Route path="/inspector/settings" element={<ProtectedRoute role="verifier"><GuestSettings /></ProtectedRoute>} />
 
           {/* Accountant */}
           <Route path="/pm/dashboard" element={<ProtectedRoute role="accountant"><PMDashboard /></ProtectedRoute>} />

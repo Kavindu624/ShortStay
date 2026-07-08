@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Calendar, ChevronLeft, ChevronRight, Plus, X, RotateCcw } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Plus, X, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 function buildCalendar(year, month) {
@@ -36,6 +36,7 @@ export default function HostCalendar() {
   const [selected, setSelected] = useState(new Set());
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showReplaceModal, setShowReplaceModal] = useState(false);
 
   useEffect(() => {
     api.get('/properties/host/my-properties').then(r => {
@@ -94,14 +95,14 @@ export default function HostCalendar() {
     finally { setLoading(false); }
   };
 
-  const setFullSchedule = async () => {
-    if (!confirm('This will replace the entire availability schedule for this property with the selected dates. Continue?')) return;
+  const confirmFullSchedule = async () => {
     setMsg(''); setLoading(true);
     try {
       await api.post('/availability/set', { property_id: Number(selectedProp), dates: [...selected] });
       setAvailability([...selected]);
       setSelected(new Set());
       setMsg('Availability schedule updated!');
+      setShowReplaceModal(false);
     } catch (err) { setMsg(err.response?.data?.message || 'Failed'); }
     finally { setLoading(false); }
   };
@@ -225,7 +226,7 @@ export default function HostCalendar() {
               <button className="btn-danger" style={{ width: '100%', justifyContent: 'center', display: 'flex', gap: 6 }} onClick={removeDates} disabled={loading || selected.size === 0}>
                 <X size={14} /> Block Dates
               </button>
-              <button className="btn-outline" style={{ width: '100%', justifyContent: 'center', display: 'flex', gap: 6, fontSize: 12 }} onClick={setFullSchedule} disabled={loading || selected.size === 0}>
+              <button className="btn-outline" style={{ width: '100%', justifyContent: 'center', display: 'flex', gap: 6, fontSize: 12 }} onClick={() => setShowReplaceModal(true)} disabled={loading || selected.size === 0}>
                 <RotateCcw size={13} /> Set as Full Schedule
               </button>
             </div>
@@ -241,6 +242,29 @@ export default function HostCalendar() {
           </div>
         </div>
       </div>
+
+      {/* Replace Schedule Modal */}
+      {showReplaceModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '32px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <AlertTriangle size={24} color="#d97706" />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: '#111827' }}>Replace Schedule?</h2>
+            <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              This will replace the <strong>entire</strong> availability schedule for this property with only the currently selected dates. All unselected dates will be blocked. Continue?
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-primary" onClick={confirmFullSchedule} disabled={loading} style={{ flex: 1, background: '#d97706', justifyContent: 'center' }}>
+                {loading ? 'Saving...' : 'Yes, Replace'}
+              </button>
+              <button className="btn-outline" onClick={() => setShowReplaceModal(false)} disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

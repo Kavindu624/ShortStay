@@ -174,7 +174,10 @@ exports.unsuspendUser = async (req, res) => {
 exports.getAllProperties = async (req, res) => {
   try {
     const properties = await Property.findAll({
-      include: [{ model: User, as: 'host', attributes: ['name', 'email', 'phone'] }]
+      include: [
+        { model: User, as: 'host', attributes: ['name', 'email', 'phone'] },
+        { model: require('../models/PropertyImage'), as: 'images' }
+      ]
     });
     res.status(200).json(properties);
   } catch (err) {

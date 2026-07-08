@@ -17,7 +17,10 @@ exports.getPendingProperties = async (req, res) => {
         verification_status: { [Op.in]: ['requested', 'inspecting'] },
         verification_badge: false,
       },
-      include: [{ model: User, as: 'host', attributes: ['name', 'email', 'phone'] }],
+      include: [
+        { model: User, as: 'host', attributes: ['name', 'email', 'phone'] },
+        { model: require('../models/PropertyImage'), as: 'images' }
+      ],
       order: [['property_id', 'DESC']],
     });
 
@@ -53,7 +56,7 @@ exports.getInspectionHistory = async (req, res) => {
       },
       include: [{
         model: Property,
-        attributes: ['title', 'address', 'verification_status', 'verification_badge'],
+        include: [{ model: User, as: 'host', attributes: ['name'] }]
       }],
       order: [['completed_date', 'DESC'], ['inspection_id', 'DESC']],
     });
@@ -104,11 +107,10 @@ exports.getInspectorDashboard = async (req, res) => {
   }
 };
 
-// ─── SUBMIT INSPECTION REPORT (Inspector) ────────────────────────────────────
-exports.submitInspection = async (req, res) => {
+// ─── SCHEDULE INSPECTION (Inspector) ──────────────────────────────────────────
+exports.scheduleInspection = async (req, res) => {
   try {
-    const { property_id, scheduled_date, overall_score, recommendation, notes } = req.body;
-
+    const { property_id, scheduled_date } = req.body;
     const property = await Property.findByPk(property_id);
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
@@ -118,26 +120,81 @@ exports.submitInspection = async (req, res) => {
       property_id,
       inspector_id:   req.user.user_id,
       scheduled_date,
-      completed_date: new Date(),
-      overall_score,
-      recommendation,
-      notes:          notes || null,
-      status:         'completed',
+      status:         'scheduled',
     });
 
-    // Update property verification status
     await property.update({ verification_status: 'inspecting' });
 
-    // Notify the host
-    await notify(
-      property.host_id,
-      'Property Inspection Completed 🔍',
-      `A verifier has completed the inspection of your property "${property.title}". Verification decision coming soon.`,
-      'inspection_completed',
-      property_id
-    );
+    res.status(201).json({ message: 'Inspection scheduled', inspection });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
 
-    // Notify all admins to take action on the report
+// ─── SUBMIT INSPECTION REPORT (Inspector) ────────────────────────────────────
+exports.submitInspection = async (req, res) => {
+  try {
+    const { property_id, scheduled_date, overall_score, recommendation, notes, result } = req.body;
+
+    const property = await Property.findByPk(property_id);
+    if (!property) {
+      return res.status(404).json({ message: 'Property not found' });
+    }
+
+    // Check if there is an existing scheduled inspection
+    let inspection = await Inspection.findOne({
+      where: { property_id, inspector_id: req.user.user_id, status: 'scheduled' }
+    });
+
+    if (inspection) {
+      await inspection.update({
+        completed_date: new Date(),
+        overall_score,
+        recommendation,
+        notes:          notes || null,
+        status:         'completed',
+      });
+    } else {
+      inspection = await Inspection.create({
+        property_id,
+        inspector_id:   req.user.user_id,
+        scheduled_date,
+        completed_date: new Date(),
+        overall_score,
+        recommendation,
+        notes:          notes || null,
+        status:         'completed',
+      });
+    }
+
+    // Update property verification status based on the result
+    if (result === 'failed') {
+      await property.update({ verification_status: 'rejected', verification_requested: false, verification_badge: false });
+      
+      // Notify the host about the rejection
+      await notify(
+        property.host_id,
+        'Property Verification Failed ❌',
+        `Your property "${property.title}" has failed verification. Please check the inspector's notes and make the requested changes.`,
+        'verification_failed',
+        property_id
+      );
+    } else {
+      // If passed, we can automatically approve the badge for the verifier, or mark it as reviewed.
+      // Based on user request, "Approve Property" should actually approve it.
+      await property.update({ verification_status: 'approved', verification_badge: true });
+
+      // Notify the host about the approval
+      await notify(
+        property.host_id,
+        'Property Verified! ✅',
+        `Your property "${property.title}" has been inspected and verified. Verification badge granted!`,
+        'property_verified',
+        property_id
+      );
+    }
+
+    // Notify all admins to take action or just inform them
     const admins = await User.findAll({ where: { role: 'admin' } });
     await Promise.all(admins.map(admin =>
       notify(
@@ -260,6 +317,84 @@ exports.approveBadge = async (req, res) => {
     );
 
     res.status(200).json({ message: 'Verification badge approved', property });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ─── EDIT VERIFICATION NOTES (Inspector) ─────────────────────────────────────
+exports.editVerificationNotes = async (req, res) => {
+  try {
+    const { recommendations, overall_score } = req.body;
+    const property = await Property.findByPk(req.params.id);
+
+    if (!property) {
+      return res.status(404).json({ message: 'Property not found' });
+    }
+
+    await property.update({
+      recommendations: recommendations || property.recommendations,
+      overall_score: overall_score !== undefined ? overall_score : property.overall_score,
+    });
+
+    res.status(200).json({ message: 'Verification notes updated', property });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// ─── REVOKE VERIFICATION BADGE (Inspector) ───────────────────────────────────
+exports.revokeVerificationBadge = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const sendEmail = require('../utils/sendEmail');
+    const property = await Property.findByPk(req.params.id, {
+      include: [{ model: User, as: 'host', attributes: ['name', 'email'] }]
+    });
+
+    if (!property) {
+      return res.status(404).json({ message: 'Property not found' });
+    }
+
+    await property.update({
+      verification_badge: false,
+      verification_status: 'rejected',
+      verification_requested: false,
+    });
+
+    // Notify host
+    await notify(
+      property.host_id,
+      'Verification Badge Revoked ❌',
+      `Your property "${property.title}" has had its verification badge revoked. Reason: ${reason || 'Safety or compliance standards were not met.'}`,
+      'verification_revoked',
+      property.property_id
+    );
+
+    // Email to host
+    await sendEmail(
+      property.host.email,
+      'Verification Badge Revoked - ShortStay',
+      `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto;">
+        <div style="background: #e74c3c; padding: 20px; border-radius: 8px 8px 0 0;">
+          <h2 style="color: white; margin: 0;">ShortStay</h2>
+        </div>
+        <div style="background: #f8f8f8; padding: 20px;">
+          <h3>Verification Revoked</h3>
+          <p>Dear <strong>${property.host.name}</strong>,</p>
+          <p>Unfortunately, during a recent review, the verification badge for your property was revoked.</p>
+          <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+            <p><strong>Property:</strong> ${property.title}</p>
+            <p><strong>Reason:</strong> ${reason || 'Failed to meet ongoing compliance standards.'}</p>
+          </div>
+          <p style="color: #666;">You may request a re-inspection after addressing these issues.</p>
+        </div>
+      </div>
+      `
+    );
+
+    res.status(200).json({ message: 'Verification badge revoked', property });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Star, Pencil, Trash2, Plus, X } from 'lucide-react';
+import { Star, Pencil, Trash2, Plus, X, AlertTriangle } from 'lucide-react';
 
 function StarRating({ value, onChange, readonly }) {
   return (
@@ -26,6 +26,7 @@ export default function GuestReviews() {
   const [form, setForm] = useState({ booking_id: '', property_id: '', rating: 5, comment: '' });
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState(null);
 
   const load = () => {
     api.get('/reviews/my')
@@ -83,11 +84,12 @@ export default function GuestReviews() {
     }
   };
 
-  const deleteReview = async (id) => {
-    if (!confirm('Delete this review?')) return;
+  const confirmDelete = async () => {
+    if (!deleteModal) return;
     try {
-      await api.delete(`/reviews/${id}`);
+      await api.delete(`/reviews/${deleteModal}`);
       load();
+      setDeleteModal(null);
     } catch (err) { alert(err.response?.data?.message || 'Failed'); }
   };
 
@@ -174,7 +176,7 @@ export default function GuestReviews() {
                   <button className="btn-outline btn-sm" onClick={() => startEdit(r)} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Pencil size={11} /> Edit
                   </button>
-                  <button className="btn-danger btn-sm" onClick={() => deleteReview(r.review_id)} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <button className="btn-danger btn-sm" onClick={() => setDeleteModal(r.review_id)} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Trash2 size={11} />
                   </button>
                 </div>
@@ -188,6 +190,29 @@ export default function GuestReviews() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete Review Modal */}
+      {deleteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '32px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <AlertTriangle size={24} color="#ef4444" />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: '#111827' }}>Delete Review?</h2>
+            <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              Are you sure you want to delete this review? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-primary" onClick={confirmDelete} style={{ flex: 1, background: '#ef4444', justifyContent: 'center' }}>
+                Yes, Delete
+              </button>
+              <button className="btn-outline" onClick={() => setDeleteModal(null)} style={{ flex: 1, justifyContent: 'center' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </DashboardLayout>

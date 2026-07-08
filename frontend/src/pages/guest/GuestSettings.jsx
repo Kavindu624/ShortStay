@@ -3,7 +3,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { useAuth } from '../../AuthContext';
 import { getProfileUrl } from '../../utils';
-import { User, Lock, Trash2, Camera, Bell, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Trash2, Camera, Bell, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 
 export default function GuestSettings() {
   const { user, logout, updateUser } = useAuth();
@@ -18,6 +18,7 @@ export default function GuestSettings() {
   const [uploading, setUploading] = useState(false);
   const [avatar, setAvatar] = useState(user?.profile_picture || null);
   const [activeTab, setActiveTab] = useState('profile');
+  const [deleteModal, setDeleteModal] = useState(false);
   const fileRef = useRef();
 
   // Fetch real profile from backend on mount to get up-to-date profile_picture
@@ -114,13 +115,15 @@ export default function GuestSettings() {
     finally { setUploading(false); }
   };
 
-  const deleteAccount = async () => {
-    if (!confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) return;
+  const confirmDeleteAccount = async () => {
     try {
       // Backend route is DELETE /api/profile/account
       await api.delete('/profile/account');
       logout();
-    } catch (err) { setMsg3(err.response?.data?.message || 'Failed to delete account'); }
+    } catch (err) { 
+      setMsg3(err.response?.data?.message || 'Failed to delete account'); 
+      setDeleteModal(false);
+    }
   };
 
   return (
@@ -250,9 +253,32 @@ export default function GuestSettings() {
             Permanently delete your account and all associated data. This action cannot be undone.
           </p>
           {msg3 && <div className="alert alert-error">{msg3}</div>}
-          <button className="btn-danger" onClick={deleteAccount}>Delete My Account</button>
+          <button className="btn-danger" onClick={() => setDeleteModal(true)}>Delete My Account</button>
         </div>
         </div>
+        
+        {/* Delete Account Modal */}
+        {deleteModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '32px' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <AlertTriangle size={24} color="#ef4444" />
+              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: '#111827' }}>Delete Account?</h2>
+              <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+                Are you sure you want to <strong>permanently</strong> delete your account? This will erase all your data and cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button className="btn-primary" onClick={confirmDeleteAccount} style={{ flex: 1, background: '#ef4444', justifyContent: 'center' }}>
+                  Yes, Delete
+                </button>
+                <button className="btn-outline" onClick={() => setDeleteModal(false)} style={{ flex: 1, justifyContent: 'center' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </DashboardLayout>
   );
 }

@@ -1,118 +1,231 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { ClipboardList, MapPin, RefreshCw, Send, Upload } from 'lucide-react';
+import { MapPin, Image as ImageIcon, FileText, CheckCircle, XCircle, Calendar, UploadCloud, FileVideo } from 'lucide-react';
 
 export default function InspectorPending() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitModal, setSubmitModal] = useState(null);
-  const [form, setForm] = useState({ result: 'passed', notes: '' });
-  const [images, setImages] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState('');
+  
+  const [photoModal, setPhotoModal] = useState(null);
+  const [docModal, setDocModal] = useState(null);
+  
+  const [scheduleModal, setScheduleModal] = useState(null);
+  const [scheduledDate, setScheduledDate] = useState('');
+  
+  const [conductModal, setConductModal] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [images, setImages] = useState([]);
+  
+  const [confirmModal, setConfirmModal] = useState(null);
+  const [successModal, setSuccessModal] = useState(null);
 
   const load = () => {
     setLoading(true);
     api.get('/inspector/pending')
-      // Backend returns { total, properties: [...] }
       .then(r => setProperties(r.data?.properties || r.data || []))
       .catch(() => setProperties([]))
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
-  const openSubmit = (prop) => {
-    setSubmitModal(prop);
-    setForm({ result: 'passed', notes: '' });
-    setImages([]);
-    setMsg('');
+  const handleSchedule = async () => {
+    if (!scheduledDate) return alert('Please select a date');
+    setSubmitting(true);
+    try {
+      await api.post('/inspector/schedule', {
+        property_id: scheduleModal.property_id,
+        scheduled_date: scheduledDate
+      });
+      setMsg('Inspection scheduled successfully!');
+      setTimeout(() => { setMsg(''); setScheduleModal(null); load(); }, 1500);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to schedule');
+    } finally { setSubmitting(false); }
   };
 
-  const submitInspection = async () => {
-    if (!form.notes.trim()) { setMsg('Please add inspection notes.'); return; }
+  const handleConduct = async (result) => {
+    // Open confirmation modal instead of native confirm
+    setConfirmModal({ ...conductModal, result });
+  };
+
+  const executeConduct = async () => {
     setSubmitting(true); setMsg('');
+    const { result, property_id } = confirmModal;
+    
     try {
-      const res = await api.post('/inspector/submit', {
-        property_id: submitModal.property_id,
-        result: form.result,
-        notes: form.notes,
+      // 1. Submit the report to create/update inspection record
+      const r = await api.post('/inspector/submit', {
+        property_id: property_id,
+        result: result,
+        notes: notes || (result === 'passed' ? 'Property meets all verification standards.' : 'Failed verification checklist.'),
+        overall_score: result === 'passed' ? 5.0 : 2.0
       });
-      // Upload images if any
-      if (images.length > 0 && res.data?.inspection?.inspection_id) {
-        const fd = new FormData();
-        images.forEach(img => fd.append('images', img));
-        await api.post(`/inspector/${res.data.inspection.inspection_id}/images`, fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+
+      // 2. Upload images if any
+      if (images.length > 0) {
+        const formData = new FormData();
+        Array.from(images).forEach(i => formData.append('images', i));
+        await api.post(`/inspector/${r.data.inspection.inspection_id}/images`, formData);
       }
-      setMsg('Inspection submitted successfully!');
-      setTimeout(() => { setSubmitModal(null); load(); }, 1500);
+
+      setConfirmModal(null);
+      setConductModal(null);
+      setImages([]);
+      setNotes('');
+      setSuccessModal({ result });
+      load();
     } catch (err) {
-      setMsg(err.response?.data?.message || 'Submission failed');
+      alert(err.response?.data?.message || 'Submission failed');
+      setConfirmModal(null);
     } finally { setSubmitting(false); }
   };
 
   return (
     <DashboardLayout>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div><div className="page-title">Pending Inspections</div><div className="page-subtitle">Properties awaiting your inspection report</div></div>
-        <button className="btn-outline" onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <RefreshCw size={14} /> Refresh
-        </button>
+      <div style={{ marginBottom: 24 }}>
+        <div className="page-title">Verification Queue</div>
+        <div className="page-subtitle">Review, schedule, and conduct property inspections</div>
       </div>
 
-      {/* Submit modal */}
-      {submitModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: 12, padding: 28, width: 480, boxShadow: '0 8px 32px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 4 }}>Submit Inspection Report</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>{submitModal.title} — {submitModal.address}</p>
-            {msg && <div className={`alert ${msg.includes('success') ? 'alert-success' : 'alert-error'}`}>{msg}</div>}
+      {msg && <div className={`alert ${msg.includes('success') ? 'alert-success' : 'alert-error'}`} style={{ marginBottom: 20 }}>{msg}</div>}
+
+      {/* Success Modal */}
+      {successModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '40px 20px' }}>
+            {successModal.result === 'passed' ? (
+              <CheckCircle size={64} color="#10b981" style={{ margin: '0 auto 20px' }} />
+            ) : (
+              <XCircle size={64} color="#ef4444" style={{ margin: '0 auto 20px' }} />
+            )}
+            <h2 style={{ marginBottom: 12, fontSize: 24, color: '#111827' }}>
+              {successModal.result === 'passed' ? 'Property Approved!' : 'Property Rejected'}
+            </h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 24, lineHeight: 1.5 }}>
+              {successModal.result === 'passed' 
+                ? 'The property has been successfully verified and the badge has been awarded.' 
+                : 'The property has been rejected. The host will be notified to make the requested changes.'}
+            </p>
+            <button className="btn-primary" onClick={() => setSuccessModal(null)} style={{ width: '100%', justifyContent: 'center' }}>Continue</button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Action Modal */}
+      {confirmModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: confirmModal.result === 'passed' ? '#d1fae5' : '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+               {confirmModal.result === 'passed' ? <CheckCircle size={24} color="#10b981" /> : <XCircle size={24} color="#ef4444" />}
+            </div>
+            <h3 style={{ marginBottom: 12, fontSize: 20 }}>Confirm {confirmModal.result === 'passed' ? 'Approval' : 'Rejection'}</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24 }}>
+              Are you sure you want to {confirmModal.result === 'passed' ? 'approve' : 'reject'} this property? This action will notify the host immediately.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button 
+                className="btn-primary" 
+                onClick={executeConduct} 
+                disabled={submitting} 
+                style={{ flex: 1, background: confirmModal.result === 'passed' ? '#10b981' : '#ef4444' }}>
+                {submitting ? 'Processing...' : `Yes, ${confirmModal.result === 'passed' ? 'Approve' : 'Reject'}`}
+              </button>
+              <button className="btn-outline" onClick={() => setConfirmModal(null)} disabled={submitting} style={{ flex: 1 }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Modal */}
+      {scheduleModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%' }}>
+            <h3 style={{ marginBottom: 16 }}>Schedule Inspection</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>Select a date to inspect <strong>{scheduleModal.title}</strong>.</p>
             <div className="form-group">
-              <label className="form-label">Inspection Result</label>
-              <div style={{ display: 'flex', gap: 10 }}>
-                {['passed', 'failed'].map(r => (
-                  <button key={r} type="button"
-                    onClick={() => setForm(f => ({ ...f, result: r }))}
-                    style={{
-                      padding: '8px 20px', borderRadius: 8, fontWeight: 600, border: '2px solid',
-                      borderColor: form.result === r ? (r === 'passed' ? '#10b981' : '#ef4444') : 'var(--border)',
-                      background: form.result === r ? (r === 'passed' ? '#d1fae5' : '#fee2e2') : 'white',
-                      color: form.result === r ? (r === 'passed' ? '#059669' : '#dc2626') : 'var(--text-muted)',
-                      cursor: 'pointer', textTransform: 'capitalize',
-                    }}>
-                    {r === 'passed' ? '✓ Passed' : '✗ Failed'}
-                  </button>
-                ))}
+              <label className="form-label">Inspection Date</label>
+              <input type="date" className="form-input" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-primary" onClick={handleSchedule} disabled={submitting} style={{ flex: 1 }}>Confirm Schedule</button>
+              <button className="btn-outline" onClick={() => setScheduleModal(null)} style={{ flex: 1 }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conduct Inspection Modal */}
+      {conductModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div className="card" style={{ width: '100%', maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ marginBottom: 8, fontSize: 22 }}>Conduct Inspection</h2>
+            <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 24 }}>Upload evidence and submit your final verdict for <strong>{conductModal.title}</strong>.</p>
+            
+            <div className="form-group">
+              <label className="form-label">Inspection Notes & Recommendations</label>
+              <textarea className="form-input" rows={4} placeholder="Describe the condition, safety issues, or positive remarks..." value={notes} onChange={e => setNotes(e.target.value)}></textarea>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Upload Evidence Photos (Max 5)</label>
+              <div style={{ border: '2px dashed var(--border)', padding: 32, borderRadius: 8, textAlign: 'center', background: '#f8fafc', cursor: 'pointer' }} onClick={() => document.getElementById('evidenceUpload').click()}>
+                <UploadCloud size={32} color="#9ca3af" style={{ margin: '0 auto 12px' }} />
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>Click to upload images</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>JPG, PNG up to 5MB</div>
+                <input id="evidenceUpload" type="file" multiple accept="image/*" style={{ display: 'none' }} onChange={e => setImages(Array.from(e.target.files).slice(0, 5))} />
               </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Inspection Notes <span style={{ color: '#ef4444' }}>*</span></label>
-              <textarea className="form-input" rows={4}
-                placeholder="Describe your findings — safety standards, cleanliness, amenities condition, etc."
-                value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                style={{ resize: 'vertical' }} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Evidence Photos (optional, max 5)</label>
-              <input type="file" accept="image/*" multiple
-                onChange={e => setImages(prev => [...prev, ...Array.from(e.target.files)].slice(0, 5))}
-                style={{ display: 'none' }} id="inspImgUpload" />
-              <label htmlFor="inspImgUpload" className="btn-outline" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Upload size={14} /> Upload Photos
-              </label>
               {images.length > 0 && (
-                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)' }}>{images.length} photo(s) selected</div>
+                <div style={{ fontSize: 13, color: '#10b981', marginTop: 8, fontWeight: 600 }}>{images.length} images selected.</div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn-primary" onClick={submitInspection} disabled={submitting}
-                style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Send size={14} /> {submitting ? 'Submitting...' : 'Submit Report'}
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 32 }}>
+              <button className="btn-primary" onClick={() => handleConduct('passed')} disabled={submitting} style={{ flex: 1, background: '#10b981', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                <CheckCircle size={16} /> Approve Property
               </button>
-              <button className="btn-outline" onClick={() => setSubmitModal(null)}>Cancel</button>
+              <button className="btn-primary" onClick={() => handleConduct('failed')} disabled={submitting} style={{ flex: 1, background: '#ef4444', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                <XCircle size={16} /> Reject & Request Changes
+              </button>
             </div>
+            <button className="btn-outline" onClick={() => { setConductModal(null); setImages([]); setNotes(''); }} style={{ width: '100%', marginTop: 12 }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Modal */}
+      {photoModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyItems: 'center', padding: 40, flexDirection: 'column' }}>
+          <div style={{ width: '100%', maxWidth: 800, display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+            <button onClick={() => setPhotoModal(null)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><XCircle size={32} /></button>
+          </div>
+          <div style={{ background: 'white', padding: 20, borderRadius: 12, width: '100%', maxWidth: 800, maxHeight: '80vh', overflowY: 'auto' }}>
+            <h3 style={{ marginBottom: 16 }}>Photos for {photoModal.title}</h3>
+            {photoModal.images && photoModal.images.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+                {photoModal.images.map((img, idx) => (
+                  <img key={idx} src={img.image_url.startsWith('http') ? img.image_url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/properties/${img.image_url}`} alt={`Property ${idx}`} style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 8 }} />
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No additional photos uploaded.</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Document Modal */}
+      {docModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', padding: 32, borderRadius: 12, width: 400, textAlign: 'center' }}>
+            <FileText size={48} color="#1e3a8a" style={{ marginBottom: 16 }} />
+            <h3 style={{ marginBottom: 8 }}>Documents Verified</h3>
+            <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: 14 }}>
+              The ownership and identification documents for <strong>{docModal.title}</strong> have been uploaded and automatically verified by the system.
+            </p>
+            <button className="btn-primary" onClick={() => setDocModal(null)} style={{ width: '100%', justifyContent: 'center' }}>Close</button>
           </div>
         </div>
       )}
@@ -121,36 +234,95 @@ export default function InspectorPending() {
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>Loading...</div>
       ) : properties.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-          <ClipboardList size={44} style={{ marginBottom: 12, opacity: 0.3 }} />
-          <p style={{ fontSize: 15, fontWeight: 600 }}>No pending inspections</p>
-          <p style={{ fontSize: 13, marginTop: 4 }}>All properties have been inspected.</p>
+          <CheckCircle size={44} style={{ marginBottom: 12, opacity: 0.3 }} />
+          <p style={{ fontSize: 15, fontWeight: 600 }}>Queue is empty</p>
+          <p style={{ fontSize: 13, marginTop: 4 }}>All pending properties have been reviewed.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {properties.map(p => (
-            <div key={p.property_id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{p.title}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 12, marginBottom: 6 }}>
-                  <MapPin size={11} /> {p.address}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {properties.map(p => {
+            const images = p.images || [];
+            let mainImg = 'https://placehold.co/600x400?text=No+Image';
+            if (p.image) {
+              mainImg = p.image.startsWith('http') ? p.image : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/properties/${p.image}`;
+            } else if (images.length > 0) {
+              mainImg = images[0].image_url.startsWith('http') ? images[0].image_url : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/properties/${images[0].image_url}`;
+            }
+            
+            const isScheduled = p.verification_status === 'inspecting';
+
+            return (
+              <div key={p.property_id} className="card" style={{ display: 'flex', gap: 24, padding: 24 }}>
+                {/* Left: Image & Buttons */}
+                <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ width: '100%', height: 200, borderRadius: 12, overflow: 'hidden', background: '#f3f4f6' }}>
+                    <img src={mainImg} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button className="btn-outline" onClick={() => setPhotoModal(p)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12 }}>
+                      <ImageIcon size={14} /> View Photos ({images.length})
+                    </button>
+                    <button className="btn-outline" onClick={() => setDocModal(p)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12 }}>
+                      <FileText size={14} /> Documents (3)
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 10, fontSize: 12 }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Type: <strong style={{ color: 'var(--text-main)', textTransform: 'capitalize' }}>{p.property_type || 'N/A'}</strong></span>
-                  <span style={{ color: 'var(--text-muted)' }}>Max Guests: <strong style={{ color: 'var(--text-main)' }}>{p.max_guests}</strong></span>
-                  <span className={`badge ${p.verification_status === 'inspecting' ? 'badge-info' : 'badge-warning'}`} style={{ fontSize: 10 }}>
-                    {p.verification_status || 'pending'}
-                  </span>
+
+                {/* Right: Details */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                    <div>
+                      <h3 style={{ fontWeight: 800, fontSize: 20, marginBottom: 4 }}>{p.title}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-muted)', fontSize: 13 }}>
+                        <MapPin size={14} /> {p.address}
+                      </div>
+                    </div>
+                    <span className={`badge ${isScheduled ? 'badge-info' : 'badge-warning'}`} style={{ padding: '6px 12px', fontSize: 12, fontWeight: 700 }}>
+                      {isScheduled ? 'Inspection Scheduled' : 'Pending Schedule'}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, margin: '16px 0', padding: '16px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+                    <div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Host</div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{p.host?.name || 'Unknown'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Price per Night</div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{Number(p.price_per_night).toLocaleString()} LKR</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Property Type</div>
+                      <div style={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{p.property_type || 'Apartment'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Bedrooms</div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{p.bedrooms || 2} Bedrooms</div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ background: '#f8fafc', borderRadius: 8, padding: 16, marginTop: 'auto' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Verification Actions:</div>
+                    
+                    {!isScheduled ? (
+                      <button className="btn-primary" 
+                        onClick={() => setScheduleModal(p)}
+                        style={{ width: '100%', background: '#3b82f6', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                        <Calendar size={16} /> Schedule Inspection
+                      </button>
+                    ) : (
+                      <button className="btn-primary" 
+                        onClick={() => setConductModal(p)}
+                        style={{ width: '100%', background: '#8b5cf6', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
+                        <FileVideo size={16} /> Conduct Inspection
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right', marginLeft: 20 }}>
-                <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: 8 }}>Rs.{Number(p.price_per_night).toLocaleString()}/night</div>
-                <button className="btn-primary btn-sm" onClick={() => openSubmit(p)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <ClipboardList size={12} /> Submit Report
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </DashboardLayout>

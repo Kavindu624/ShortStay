@@ -8,7 +8,7 @@ const panelLabel = {
   guest: 'Guest Panel',
   host: 'Host Panel',
   admin: 'Admin Panel',
-  verifier: 'Inspector Panel',
+  verifier: 'Verifier Panel',
   accountant: 'Accountant Panel',
 };
 

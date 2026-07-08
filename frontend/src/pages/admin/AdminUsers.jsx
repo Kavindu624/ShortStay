@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Users, Trash2, Plus, ShieldOff, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, Trash2, Plus, ShieldOff, ShieldCheck, AlertTriangle, LineChart } from 'lucide-react';
 
 const roleColors = { guest: 'badge-info', host: 'badge-success', admin: 'badge-error', verifier: 'badge-warning', accountant: 'badge-primary' };
 
@@ -13,23 +14,25 @@ export default function AdminUsers() {
   const [msg, setMsg] = useState('');
   const [suspendReason, setSuspendReason] = useState({});
   const [showSuspendFor, setShowSuspendFor] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [forceDeleteModal, setForceDeleteModal] = useState(null);
 
   const load = () => { api.get('/admin/users').then(r => setUsers(r.data || [])).catch(() => {}).finally(() => setLoading(false)); };
   useEffect(load, []);
 
-  const deleteUser = async (id, force = false) => {
-    if (!force) {
-      if (!confirm('Delete this user? This cannot be undone.')) return;
-    }
+  const confirmDelete = async (force = false) => {
+    const targetUser = force ? forceDeleteModal.user : deleteModal;
+    if (!targetUser) return;
     try { 
-      await api.delete(`/admin/users/${id}${force ? '?force=true' : ''}`); 
+      await api.delete(`/admin/users/${targetUser.user_id}${force ? '?force=true' : ''}`); 
       load(); 
+      setDeleteModal(null);
+      setForceDeleteModal(null);
     } catch (err) { 
       const errorMsg = err.response?.data?.message || 'Failed';
-      if (errorMsg.includes('active bookings')) {
-        if (confirm(`${errorMsg}\n\nDo you want to forcibly cancel all active bookings and delete this user anyway?`)) {
-          deleteUser(id, true);
-        }
+      if (!force && errorMsg.includes('active bookings')) {
+        setDeleteModal(null);
+        setForceDeleteModal({ user: targetUser, msg: errorMsg });
       } else {
         alert(errorMsg);
       }
@@ -118,15 +121,22 @@ export default function AdminUsers() {
                       <td>
                         <div style={{ display: 'flex', gap: 6 }}>
                           {u.is_suspended ? (
-                            <button className="btn-success btn-sm" onClick={() => unsuspendUser(u.user_id)} title="Unsuspend" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <ShieldCheck size={12} /> Unsuspend
+                            <button className="btn-success btn-sm" onClick={() => unsuspendUser(u.user_id)} title="Unsuspend" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
+                              <ShieldCheck size={14} />
                             </button>
                           ) : (
-                            <button className="btn-warning btn-sm" onClick={() => setShowSuspendFor(u.user_id)} title="Suspend" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <ShieldOff size={12} /> Suspend
+                            <button className="btn-warning btn-sm" onClick={() => setShowSuspendFor(u.user_id)} title="Suspend" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
+                              <ShieldOff size={14} />
                             </button>
                           )}
-                          <button className="btn-danger btn-sm" onClick={() => deleteUser(u.user_id)} title="Delete"><Trash2 size={12} /></button>
+                          {u.role === 'host' && (
+                            <Link to={`/admin/users/host/${u.user_id}`} className="btn-outline btn-sm" title="View Dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px', textDecoration: 'none' }}>
+                              <LineChart size={14} />
+                            </Link>
+                          )}
+                          <button className="btn-danger btn-sm" onClick={() => setDeleteModal(u)} title="Delete" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -136,6 +146,55 @@ export default function AdminUsers() {
             </div>
           </div>
         )}
+
+      {/* Delete User Modal */}
+      {deleteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '32px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <AlertTriangle size={24} color="#ef4444" />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: '#111827' }}>Delete User?</h2>
+            <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              Are you sure you want to delete <strong>{deleteModal.name}</strong>? This cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-primary" onClick={() => confirmDelete(false)} style={{ flex: 1, background: '#ef4444', justifyContent: 'center' }}>
+                Yes, Delete
+              </button>
+              <button className="btn-outline" onClick={() => setDeleteModal(null)} style={{ flex: 1, justifyContent: 'center' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Force Delete User Modal */}
+      {forceDeleteModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 440, maxWidth: '90%', textAlign: 'center', padding: '32px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <AlertTriangle size={24} color="#d97706" />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: '#111827' }}>Active Bookings Found</h2>
+            <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 16, lineHeight: 1.5 }}>
+              {forceDeleteModal.msg}
+            </p>
+            <p style={{ color: '#b45309', fontSize: 13, marginBottom: 24, fontWeight: 600, background: '#fef3c7', padding: 12, borderRadius: 8 }}>
+              Do you want to forcibly cancel all active bookings and delete this user anyway?
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-primary" onClick={() => confirmDelete(true)} style={{ flex: 1, background: '#ef4444', justifyContent: 'center' }}>
+                Force Delete
+              </button>
+              <button className="btn-outline" onClick={() => setForceDeleteModal(null)} style={{ flex: 1, justifyContent: 'center' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

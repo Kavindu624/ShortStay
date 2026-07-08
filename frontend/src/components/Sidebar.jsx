@@ -28,6 +28,7 @@ const menuByRole = {
     { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { label: 'Users', icon: Users, path: '/admin/users' },
     { label: 'Properties', icon: Building2, path: '/admin/properties' },
+    { label: 'Verifications', icon: ShieldCheck, path: '/admin/verifications' },
     { label: 'Bookings', icon: Calendar, path: '/admin/bookings' },
     { label: 'Complaints', icon: AlertCircle, path: '/admin/complaints' },
     { label: 'Payments', icon: DollarSign, path: '/admin/payments' },
@@ -36,8 +37,8 @@ const menuByRole = {
   ],
   verifier: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/inspector/inspections' },
-    { label: 'Pending', icon: ClipboardList, path: '/inspector/pending' },
-    { label: 'History', icon: ShieldCheck, path: '/inspector/history' },
+    { label: 'Verification Queue', icon: ShieldCheck, path: '/inspector/pending' },
+    { label: 'Properties', icon: Building2, path: '/inspector/history' },
     { label: 'Settings', icon: Settings, path: '/inspector/settings' },
   ],
   accountant: [
@@ -53,7 +54,7 @@ const panelLabel = {
   guest: 'Guest Panel',
   host: 'Host Panel',
   admin: 'Admin Panel',
-  verifier: 'Inspector Panel',
+  verifier: 'Verifier Panel',
   accountant: 'Accountant Panel',
 };
 

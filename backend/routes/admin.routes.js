@@ -125,7 +125,7 @@ router.put('/users/:id/unsuspend', auth, role('admin'), adminController.unsuspen
  *       200:
  *         description: List of all properties
  */
-router.get('/properties', auth, role('admin'), adminController.getAllProperties);
+router.get('/properties', auth, role('admin', 'verifier'), adminController.getAllProperties);
 
 /**
  * @swagger

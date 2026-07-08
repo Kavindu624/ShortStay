@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Calendar } from 'lucide-react';
+import { Calendar, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const statusBadge = { confirmed: 'badge-success', approved: 'badge-info', pending: 'badge-warning', cancelled: 'badge-error' };
 
@@ -10,6 +10,8 @@ export default function HostBookings() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [commissionRate, setCommissionRate] = useState(10); // default 10%
+  const [rejectModal, setRejectModal] = useState(null);
+  const [completeModal, setCompleteModal] = useState(null);
 
   const load = () => {
     Promise.all([
@@ -29,14 +31,14 @@ export default function HostBookings() {
     try { await api.put(`/bookings/${id}/approve`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
   };
 
-  const reject = async (id) => {
-    if (!confirm('Reject this booking?')) return;
-    try { await api.put(`/bookings/${id}/reject`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+  const confirmReject = async () => {
+    if (!rejectModal) return;
+    try { await api.put(`/bookings/${rejectModal}/reject`); load(); setRejectModal(null); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
   };
 
-  const complete = async (id) => {
-    if (!confirm('Mark this booking as completed? (Only do this after the guest has checked out)')) return;
-    try { await api.put(`/bookings/${id}/complete`); load(); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
+  const confirmComplete = async () => {
+    if (!completeModal) return;
+    try { await api.put(`/bookings/${completeModal}/complete`); load(); setCompleteModal(null); } catch (err) { alert(err.response?.data?.message || 'Failed'); }
   };
 
   const stats = {
@@ -138,8 +140,8 @@ export default function HostBookings() {
                         <td>
                           <div style={{ display: 'flex', gap: 6 }}>
                             {b.status === 'pending' && <button className="btn-success btn-sm" onClick={() => approve(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Approve</button>}
-                            {b.status === 'pending' && <button className="btn-danger btn-sm" onClick={() => reject(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Reject</button>}
-                            {b.status === 'confirmed' && <button className="btn-primary btn-sm" onClick={() => complete(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Mark Completed</button>}
+                            {b.status === 'pending' && <button className="btn-danger btn-sm" onClick={() => setRejectModal(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Reject</button>}
+                            {b.status === 'confirmed' && <button className="btn-primary btn-sm" onClick={() => setCompleteModal(b.booking_id)} style={{ whiteSpace: 'nowrap' }}>Mark Completed</button>}
                           </div>
                         </td>
                       </tr>
@@ -150,6 +152,52 @@ export default function HostBookings() {
             </div>
           </div>
         )}
+
+      {/* Reject Booking Modal */}
+      {rejectModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '32px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <AlertTriangle size={24} color="#ef4444" />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: '#111827' }}>Reject Booking?</h2>
+            <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              Are you sure you want to reject this booking? This will cancel the reservation request.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-primary" onClick={confirmReject} style={{ flex: 1, background: '#ef4444', justifyContent: 'center' }}>
+                Yes, Reject
+              </button>
+              <button className="btn-outline" onClick={() => setRejectModal(null)} style={{ flex: 1, justifyContent: 'center' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Booking Modal */}
+      {completeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card" style={{ width: 400, maxWidth: '90%', textAlign: 'center', padding: '32px' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <CheckCircle2 size={24} color="#10b981" />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12, color: '#111827' }}>Mark as Completed?</h2>
+            <p style={{ color: '#4b5563', fontSize: 14, marginBottom: 24, lineHeight: 1.5 }}>
+              Mark this booking as completed? Only do this after the guest has successfully checked out.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button className="btn-primary" onClick={confirmComplete} style={{ flex: 1, background: '#10b981', justifyContent: 'center' }}>
+                Yes, Complete
+              </button>
+              <button className="btn-outline" onClick={() => setCompleteModal(null)} style={{ flex: 1, justifyContent: 'center' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

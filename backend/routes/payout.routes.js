@@ -79,7 +79,7 @@ router.get('/', auth, role('accountant'), payoutController.getAllPayouts);
  *       403:
  *         description: Forbidden — accountant only
  */
-router.get('/host/:host_id', auth, role('accountant'), payoutController.getPayoutsByHost);
+router.get('/host/:host_id', auth, role('accountant', 'admin'), payoutController.getPayoutsByHost);
 
 /**
  * @swagger
