@@ -18,6 +18,7 @@ export default function AdminReports() {
   const [hosts, setHosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [genLoading, setGenLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('revenue');
 
   const load = () => {
     setLoading(true);
@@ -95,14 +96,14 @@ export default function AdminReports() {
         ))}
       </div>
 
-      {/* Quick report links */}
+      {/* Tabs */}
       <div className="grid-3" style={{ marginBottom: 20 }}>
         {[
-          { label: 'Revenue Report', sub: 'Monthly financial breakdown', icon: '📄', color: '#dbeafe', action: () => exportToCSV(chartMonthly, 'monthly_revenue_report.csv') },
-          { label: 'Occupancy Report', sub: 'Property utilization rates', icon: '📈', color: '#d1fae5', action: () => exportToCSV(byProp, 'occupancy_report.csv') },
-          { label: 'Host Performance', sub: 'Top earning hosts', icon: '📋', color: '#fef3c7', action: () => exportToCSV(hosts, 'host_performance_report.csv') },
+          { id: 'revenue', label: 'Revenue Report', sub: 'Monthly financial breakdown', icon: '📄', color: '#dbeafe', border: '#1e3a8a', bg: '#eff6ff' },
+          { id: 'occupancy', label: 'Occupancy Report', sub: 'Property utilization rates', icon: '📈', color: '#d1fae5', border: '#10b981', bg: '#f0fdf4' },
+          { id: 'host', label: 'Host Performance', sub: 'Top earning hosts', icon: '📋', color: '#fef3c7', border: '#f59e0b', bg: '#fffbeb' },
         ].map(r => (
-          <div key={r.label} className="card" onClick={r.action} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+          <div key={r.id} className="card" onClick={() => setActiveTab(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', border: activeTab === r.id ? `1px solid ${r.border}` : '1px solid var(--border)', background: activeTab === r.id ? r.bg : 'white' }}>
             <div style={{ width: 44, height: 44, background: r.color, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{r.icon}</div>
             <div><div style={{ fontWeight: 700, fontSize: 14 }}>{r.label}</div><div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.sub}</div></div>
           </div>
@@ -113,103 +114,110 @@ export default function AdminReports() {
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>Loading report data...</div>
       ) : (
         <>
-          <div className="grid-2" style={{ marginBottom: 20 }}>
-            {/* Monthly revenue chart */}
-            <div className="card">
-              <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Monthly Revenue</h3>
-              {chartMonthly.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>No monthly data</div>
-              ) : (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={chartMonthly}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+          {activeTab === 'revenue' && (
+            <>
+              {/* Monthly revenue chart */}
+              <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Monthly Revenue</h3>
+                {chartMonthly.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>No monthly data</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={320}>
+                    <BarChart data={chartMonthly}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={v => [`Rs.${Number(v).toLocaleString()}`, 'Revenue']} />
+                      <Bar dataKey="revenue" fill="#1e3a8a" radius={[4, 4, 0, 0]} barSize={50} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              {/* Refunds */}
+              <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Refund Activity</h3>
+                {refunds.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No recent refunds.</div>
+                ) : (
+                  <div className="table-wrap">
+                    <table>
+                      <thead><tr><th>Booking</th><th>Amount</th><th>Date</th><th>Reason</th></tr></thead>
+                      <tbody>
+                        {refunds.map((r, i) => (
+                          <tr key={i}>
+                            <td>#{r.booking_id}</td>
+                            <td style={{ color: '#dc2626', fontWeight: 600 }}>- Rs.{Number(r.amount || r.refunded || 0).toLocaleString()}</td>
+                            <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{r.refund_date?.substring(0, 10) || r.created_at?.substring(0, 10)}</td>
+                            <td style={{ fontSize: 13 }}>{r.reason || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeTab === 'occupancy' && (
+            <div className="grid-2" style={{ marginBottom: 20 }}>
+              {/* Revenue by type pie */}
+              <div className="card">
+                <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Revenue by Property Type</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                      {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
                     <Tooltip formatter={v => [`Rs.${Number(v).toLocaleString()}`, 'Revenue']} />
-                    <Bar dataKey="revenue" fill="#1e3a8a" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                  </PieChart>
                 </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'host' && (
+            <div className="card" style={{ marginBottom: 20 }}>
+              <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Host Payout Report</h3>
+              {hosts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No host payouts found.</div>
+              ) : (
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Rank</th>
+                        <th>Host Name</th>
+                        <th>Total Earnings</th>
+                        <th>Bookings</th>
+                        <th>Avg per Booking</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {hosts.slice(0, 10).map((h, i) => {
+                        const earnings = Number(h.total_earnings || h.total_paid || h.amount || 0);
+                        const bookingCount = Number(h.booking_count || h.bookings || 1);
+                        return (
+                          <tr key={i}>
+                            <td>
+                              <div style={{ width: 28, height: 28, background: i < 3 ? 'var(--primary)' : '#e5e7eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: i < 3 ? 'white' : 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
+                                {i + 1}
+                              </div>
+                            </td>
+                            <td style={{ fontWeight: 600 }}>{h.host_name || h.name || `Host #${h.host_id}`}</td>
+                            <td style={{ fontWeight: 700, color: 'var(--accent)' }}>Rs.{earnings.toLocaleString()}</td>
+                            <td>{bookingCount}</td>
+                            <td>Rs.{bookingCount > 0 ? Math.round(earnings / bookingCount).toLocaleString() : 0}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-
-            {/* Revenue by type pie */}
-            <div className="card">
-              <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Revenue by Property Type</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
-                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip formatter={v => [`Rs.${Number(v).toLocaleString()}`, 'Revenue']} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Host Payouts Table */}
-          <div className="card" style={{ marginBottom: 20 }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Host Payout Report</h3>
-            {hosts.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No host payouts found.</div>
-            ) : (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Host Name</th>
-                      <th>Total Earnings</th>
-                      <th>Bookings</th>
-                      <th>Avg per Booking</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {hosts.slice(0, 10).map((h, i) => {
-                      const earnings = Number(h.total_earnings || h.total_paid || h.amount || 0);
-                      const bookingCount = Number(h.booking_count || h.bookings || 1);
-                      return (
-                        <tr key={i}>
-                          <td>
-                            <div style={{ width: 28, height: 28, background: i < 3 ? 'var(--primary)' : '#e5e7eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: i < 3 ? 'white' : 'var(--text-muted)', fontSize: 12, fontWeight: 700 }}>
-                              {i + 1}
-                            </div>
-                          </td>
-                          <td style={{ fontWeight: 600 }}>{h.host_name || h.name || `Host #${h.host_id}`}</td>
-                          <td style={{ fontWeight: 700, color: 'var(--accent)' }}>Rs.{earnings.toLocaleString()}</td>
-                          <td>{bookingCount}</td>
-                          <td>Rs.{bookingCount > 0 ? Math.round(earnings / bookingCount).toLocaleString() : 0}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Refunds */}
-          <div className="card" style={{ marginBottom: 20 }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Refund Activity</h3>
-            {refunds.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No recent refunds.</div>
-            ) : (
-              <div className="table-wrap">
-                <table>
-                  <thead><tr><th>Booking</th><th>Amount</th><th>Date</th><th>Reason</th></tr></thead>
-                  <tbody>
-                    {refunds.map((r, i) => (
-                      <tr key={i}>
-                        <td>#{r.booking_id}</td>
-                        <td style={{ color: '#dc2626', fontWeight: 600 }}>- Rs.{Number(r.amount || r.refunded || 0).toLocaleString()}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>{r.refund_date?.substring(0, 10) || r.created_at?.substring(0, 10)}</td>
-                        <td style={{ fontSize: 13 }}>{r.reason || '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          )}
         </>
       )}
 

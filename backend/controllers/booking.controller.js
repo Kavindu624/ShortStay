@@ -89,7 +89,9 @@ exports.makeBooking = async (req, res) => {
     if (nights <= 0) {
       return res.status(400).json({ message: 'Invalid dates: checkout must be after checkin' });
     }
-    if (checkin < new Date()) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkin < today) {
       return res.status(400).json({ message: 'Check-in date cannot be in the past' });
     }
     if (nights < settings.minBookingDays) {

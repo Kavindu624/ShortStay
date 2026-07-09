@@ -62,9 +62,18 @@ exports.processPayment = async (req, res) => {
       return res.status(200).json({ message: 'Payment already processed successfully', payment: existingPayment });
     }
 
+    const guestUser = await User.findByPk(booking.guest_id);
+    let discountPct = 0;
+    if (guestUser?.membership_level === 'silver') discountPct = 0.01;
+    else if (guestUser?.membership_level === 'gold') discountPct = 0.02;
+    else if (guestUser?.membership_level === 'platinum') discountPct = 0.03;
+
+    const discountAmount = booking.total_price * discountPct;
+    const finalAmount = booking.total_price - discountAmount;
+
     const payment = await Payment.create({
       booking_id,
-      amount:         booking.total_price,
+      amount:         finalAmount,
       currency:       'USD',
       payment_method: 'manual',
       payment_status: 'completed',
@@ -99,21 +108,25 @@ exports.createPaymentIntent = async (req, res) => {
     if (booking.status !== 'approved')
       return res.status(400).json({ message: 'Payment can only be made for approved bookings' });
 
-    const existing = await Payment.findOne({
-      where: { booking_id, payment_status: 'completed' },
-    });
-    if (existing) {
-      if (booking.status === 'approved') {
-        await booking.update({ status: 'confirmed' });
-      }
-      return res.status(400).json({ message: 'Booking already paid' });
+    const existingPayment = await Payment.findOne({ where: { booking_id, payment_status: 'completed' } });
+    if (existingPayment) {
+      return res.status(400).json({ message: 'Payment already processed' });
     }
 
-    // Amount in cents (Stripe expects smallest currency unit)
-    const amountCents = Math.round(parseFloat(booking.total_price) * 100);
+    const guestUser = await User.findByPk(booking.guest_id);
+    let discountPct = 0;
+    if (guestUser?.membership_level === 'silver') discountPct = 0.01;
+    else if (guestUser?.membership_level === 'gold') discountPct = 0.02;
+    else if (guestUser?.membership_level === 'platinum') discountPct = 0.03;
 
-    const intent = await stripe.paymentIntents.create({
-      amount:   amountCents,
+    const discountAmount = booking.total_price * discountPct;
+    const finalAmount = booking.total_price - discountAmount;
+
+    // Convert to cents for stripe
+    const amountCents = Math.round(finalAmount * 100);
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
       currency: 'usd',
       metadata: {
         booking_id: String(booking_id),
@@ -125,20 +138,20 @@ exports.createPaymentIntent = async (req, res) => {
     // Create a pending payment record
     const payment = await Payment.create({
       booking_id,
-      amount:         booking.total_price,
+      amount:         finalAmount,
       currency:       'USD',
       payment_method: 'stripe',
       payment_status: 'pending',
-      transaction_id: intent.id,
-      client_secret:  intent.client_secret,
+      transaction_id: paymentIntent.id,
+      client_secret:  paymentIntent.client_secret,
       payment_date:   new Date(),
     });
 
     res.status(201).json({
       message:       'Payment intent created',
-      client_secret: intent.client_secret,
+      client_secret: paymentIntent.client_secret,
       payment_id:    payment.payment_id,
-      amount:        booking.total_price,
+      amount:        finalAmount,
       currency:      'USD',
     });
   } catch (err) {

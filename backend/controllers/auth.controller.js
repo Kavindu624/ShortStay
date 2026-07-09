@@ -740,27 +740,46 @@ exports.createStaff = async (req, res) => {
 // ─────────────────────────────────────────
 exports.getMembership = async (req, res) => {
   try {
-    const { Booking } = require('../models/index');
+    const { Booking, User } = require('../models/index');
+    const { Op } = require('sequelize');
 
     const user = await User.findByPk(req.user.user_id, {
       attributes: ['user_id', 'name', 'email', 'membership_level']
     });
 
     const totalBookings = await Booking.count({
-      where: { guest_id: req.user.user_id, status: 'confirmed' }
+      where: { guest_id: req.user.user_id, status: { [Op.in]: ['confirmed', 'completed'] } }
     });
 
-    let nextLevel      = null;
+    // Auto-upgrade logic
+    let currentLevel = user.membership_level || 'basic';
+    const thresholds = { silver: 5, gold: 10, platinum: 15 };
+
+    if (totalBookings >= thresholds.platinum && currentLevel !== 'platinum') {
+      currentLevel = 'platinum';
+      await user.update({ membership_level: 'platinum' });
+    } else if (totalBookings >= thresholds.gold && totalBookings < thresholds.platinum && currentLevel !== 'gold' && currentLevel !== 'platinum') {
+      currentLevel = 'gold';
+      await user.update({ membership_level: 'gold' });
+    } else if (totalBookings >= thresholds.silver && totalBookings < thresholds.gold && currentLevel === 'basic') {
+      currentLevel = 'silver';
+      await user.update({ membership_level: 'silver' });
+    }
+
+    let nextLevel = null;
     let bookingsNeeded = 0;
 
-    if (user.membership_level === 'basic') {
-      nextLevel      = 'silver';
-      bookingsNeeded = 5 - totalBookings;
-    } else if (user.membership_level === 'silver') {
-      nextLevel      = 'gold';
-      bookingsNeeded = 10 - totalBookings;
+    if (currentLevel === 'basic') {
+      nextLevel = 'silver';
+      bookingsNeeded = thresholds.silver - totalBookings;
+    } else if (currentLevel === 'silver') {
+      nextLevel = 'gold';
+      bookingsNeeded = thresholds.gold - totalBookings;
+    } else if (currentLevel === 'gold') {
+      nextLevel = 'platinum';
+      bookingsNeeded = thresholds.platinum - totalBookings;
     } else {
-      nextLevel      = 'You are at the highest level!';
+      nextLevel = 'You are at the highest level!';
       bookingsNeeded = 0;
     }
 
@@ -768,7 +787,7 @@ exports.getMembership = async (req, res) => {
       user_id:          user.user_id,
       name:             user.name,
       email:            user.email,
-      membership_level: user.membership_level,
+      membership_level: currentLevel,
       total_bookings:   totalBookings,
       next_level:       nextLevel,
       bookings_needed:  bookingsNeeded > 0 ? bookingsNeeded : 0,

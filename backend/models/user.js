@@ -24,7 +24,7 @@ const User = sequelize.define('user', {
     ) 
   },
   membership_level: {
-    type: DataTypes.ENUM('basic', 'silver', 'gold'),
+    type: DataTypes.ENUM('basic', 'silver', 'gold', 'platinum'),
     defaultValue: 'basic'
   },
   is_suspended: { 

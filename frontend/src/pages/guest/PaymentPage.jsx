@@ -3,18 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { ArrowLeft, CreditCard, CheckCircle, XCircle } from 'lucide-react';
+import { useAuth } from '../../AuthContext';
 
 export default function PaymentPage() {
   const { bookingId } = useParams();
   const nav = useNavigate();
+  const { user } = useAuth();
   const [booking, setBooking] = useState(null);
+  const [membershipTier, setMembershipTier] = useState('basic');
   const [form, setForm] = useState({ card_number: '', expiry: '', cvv: '', first_name: '', last_name: '', address: '', city: '', province: '', postal_code: '', mobile: '', email: '' });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle', 'success', 'failed'
 
-  useEffect(() => { api.get(`/bookings/${bookingId}`).then(r => setBooking(r.data)).catch(() => {}); }, [bookingId]);
+  useEffect(() => { 
+    api.get(`/bookings/${bookingId}`).then(r => setBooking(r.data)).catch(() => {}); 
+    api.get('/auth/membership').then(r => setMembershipTier(r.data?.membership_level || 'basic')).catch(() => {});
+  }, [bookingId]);
 
   const handlePay = async () => {
     // Validate form fields
@@ -42,7 +48,14 @@ export default function PaymentPage() {
 
   const nights = booking ? Math.ceil((new Date(booking.checkout_date) - new Date(booking.checkin_date)) / 86400000) : 0;
   const base = booking ? Number(booking.total_price) : 0;
-  const total = base;
+  
+  let discountPct = 0;
+  if (membershipTier === 'silver') discountPct = 0.01;
+  else if (membershipTier === 'gold') discountPct = 0.02;
+  else if (membershipTier === 'platinum') discountPct = 0.03;
+
+  const discountAmount = base * discountPct;
+  const total = base - discountAmount;
 
   if (status === 'success') {
     return (
@@ -172,10 +185,10 @@ export default function PaymentPage() {
             <div style={{ fontSize: 13 }}>
               {[
                 [`Total cost of rent (${nights} days)`, `Rs. ${base.toLocaleString()}`],
-                ['Discount', '- Rs. 0'],
+                ['Discount', `- Rs. ${discountAmount.toLocaleString()}`],
               ].map(([l, v]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, color: l === 'Discount' ? 'var(--accent)' : 'var(--text-muted)' }}>
-                  <span>{l}</span><span style={{ color: l === 'Discount' ? 'var(--accent)' : 'var(--text-main)' }}>{v}</span>
+                  <span>{l} {l === 'Discount' && discountPct > 0 ? `(${discountPct * 100}%)` : ''}</span><span style={{ color: l === 'Discount' ? 'var(--accent)' : 'var(--text-main)' }}>{v}</span>
                 </div>
               ))}
             </div>

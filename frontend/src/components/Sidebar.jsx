@@ -44,10 +44,10 @@ const menuByRole = {
   ],
   accountant: [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/pm/dashboard' },
-    { label: 'Payments', icon: CreditCard, path: '/pm/payments' },
     { label: 'Payouts', icon: DollarSign, path: '/pm/payouts' },
-    { label: 'Disputes', icon: AlertCircle, path: '/pm/disputes' },
+    { label: 'Payments', icon: CreditCard, path: '/pm/payments' },
     { label: 'Reports', icon: BarChart3, path: '/pm/reports' },
+    { label: 'Settings', icon: Settings, path: '/pm/settings' },
   ],
 };
 

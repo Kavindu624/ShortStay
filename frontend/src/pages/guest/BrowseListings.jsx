@@ -6,43 +6,57 @@ import api from '../../api';
 import { getImageUrl } from '../../utils';
 import { MapPin, Star, Search, Filter, X, Users, ChevronDown, BadgeCheck } from 'lucide-react';
 
-const PROPERTY_TYPES = ['', 'apartment', 'house', 'villa', 'condo', 'studio', 'cabin'];
+const PROPERTY_TYPES = ['', 'apartment', 'house', 'villa', 'room', 'bungalow', 'cabin'];
 
 export default function BrowseListings({ publicMode = false }) {
   const [properties, setProperties] = useState([]);
-  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showFilter, setShowFilter] = useState(false);
-  const [filters, setFilters] = useState({ min_price: '', max_price: '', property_type: '', min_guests: '', sort: 'newest' });
+  const [filters, setFilters] = useState({ 
+    location: '', 
+    min_price: '', 
+    max_price: '', 
+    property_type: '', 
+    guests: '', 
+    checkin_date: '',
+    checkout_date: '',
+    verification_status: '',
+    availability_status: '',
+    min_rating: '',
+    sort: 'newest' 
+  });
   const nav = useNavigate();
 
   const load = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (search.trim()) params.set('search', search.trim());
+    if (filters.location.trim()) params.set('location', filters.location.trim());
     if (filters.min_price) params.set('min_price', filters.min_price);
     if (filters.max_price) params.set('max_price', filters.max_price);
     if (filters.property_type) params.set('property_type', filters.property_type);
-    if (filters.min_guests) params.set('min_guests', filters.min_guests);
+    if (filters.guests) params.set('guests', filters.guests);
+    if (filters.checkin_date) params.set('checkin_date', filters.checkin_date);
+    if (filters.checkout_date) params.set('checkout_date', filters.checkout_date);
+    if (filters.verification_status) params.set('verification_status', filters.verification_status);
+    if (filters.availability_status) params.set('availability_status', filters.availability_status);
+    if (filters.min_rating) params.set('min_rating', filters.min_rating);
+    
     const query = params.toString();
     api.get(`/properties${query ? `?${query}` : ''}`)
       .then(r => setProperties(r.data.properties || r.data || []))
       .catch(() => setProperties([]))
       .finally(() => setLoading(false));
-  }, [search, filters]);
+  }, [filters]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      load();
+    }, 400); // 400ms delay to avoid spamming the backend while typing
+    return () => clearTimeout(delayDebounceFn);
+  }, [load]);
 
-  // Client-side filter on top of API results
+  // Backend does the heavy lifting, we only sort client-side
   let filtered = properties.filter(p => p.is_approved);
-  if (search) {
-    const q = search.toLowerCase();
-    filtered = filtered.filter(p => p.title?.toLowerCase().includes(q) || p.address?.toLowerCase().includes(q));
-  }
-  if (filters.property_type) filtered = filtered.filter(p => p.property_type === filters.property_type);
-  if (filters.min_price) filtered = filtered.filter(p => Number(p.price_per_night) >= Number(filters.min_price));
-  if (filters.max_price) filtered = filtered.filter(p => Number(p.price_per_night) <= Number(filters.max_price));
-  if (filters.min_guests) filtered = filtered.filter(p => Number(p.max_guests) >= Number(filters.min_guests));
 
   // Sort
   if (filters.sort === 'price_asc') filtered = [...filtered].sort((a, b) => Number(a.price_per_night) - Number(b.price_per_night));
@@ -50,9 +64,21 @@ export default function BrowseListings({ publicMode = false }) {
   else if (filters.sort === 'rating') filtered = [...filtered].sort((a, b) => Number(b.overall_score || 0) - Number(a.overall_score || 0));
   else filtered = [...filtered].sort((a, b) => b.property_id - a.property_id);
 
-  const activeFilters = Object.entries(filters).filter(([k, v]) => v && k !== 'sort').length;
+  const activeFilters = Object.entries(filters).filter(([k, v]) => v && k !== 'sort' && k !== 'location').length;
 
-  const resetFilters = () => setFilters({ min_price: '', max_price: '', property_type: '', min_guests: '', sort: 'newest' });
+  const resetFilters = () => setFilters({ 
+    location: '', 
+    min_price: '', 
+    max_price: '', 
+    property_type: '', 
+    guests: '', 
+    checkin_date: '',
+    checkout_date: '',
+    verification_status: '',
+    availability_status: '',
+    min_rating: '',
+    sort: 'newest' 
+  });
 
   const Layout = publicMode ? PublicLayout : DashboardLayout;
 
@@ -74,7 +100,7 @@ export default function BrowseListings({ publicMode = false }) {
           <div style={{ flex: 1, position: 'relative' }}>
             <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-light)' }} />
             <input className="form-input" placeholder="Search by title or location..."
-              value={search} onChange={e => setSearch(e.target.value)}
+              value={filters.location} onChange={e => setFilters(f => ({ ...f, location: e.target.value }))}
               onKeyDown={e => e.key === 'Enter' && load()}
               style={{ paddingLeft: 36, margin: 0 }} />
           </div>
@@ -112,7 +138,40 @@ export default function BrowseListings({ publicMode = false }) {
             </div>
             <div>
               <label className="form-label">Min Guests</label>
-              <input className="form-input" type="number" placeholder="1" min="1" value={filters.min_guests} onChange={e => setFilters(f => ({ ...f, min_guests: e.target.value }))} />
+              <input className="form-input" type="number" placeholder="1" min="1" value={filters.guests} onChange={e => setFilters(f => ({ ...f, guests: e.target.value }))} />
+            </div>
+            <div>
+              <label className="form-label">Check-in</label>
+              <input className="form-input" type="date" value={filters.checkin_date} onChange={e => setFilters(f => ({ ...f, checkin_date: e.target.value }))} />
+            </div>
+            <div>
+              <label className="form-label">Check-out</label>
+              <input className="form-input" type="date" value={filters.checkout_date} onChange={e => setFilters(f => ({ ...f, checkout_date: e.target.value }))} />
+            </div>
+            <div>
+              <label className="form-label">Verification</label>
+              <select className="form-input" value={filters.verification_status} onChange={e => setFilters(f => ({ ...f, verification_status: e.target.value }))}>
+                <option value="">Any Status</option>
+                <option value="verified">Verified Only</option>
+                <option value="not_verified">Unverified Only</option>
+              </select>
+            </div>
+            <div>
+              <label className="form-label">Availability</label>
+              <select className="form-input" value={filters.availability_status} onChange={e => setFilters(f => ({ ...f, availability_status: e.target.value }))}>
+                <option value="">Any Availability</option>
+                <option value="available">Available Dates</option>
+                <option value="booked">Fully Booked</option>
+              </select>
+            </div>
+            <div>
+              <label className="form-label">Min Rating</label>
+              <select className="form-input" value={filters.min_rating} onChange={e => setFilters(f => ({ ...f, min_rating: e.target.value }))}>
+                <option value="">Any Rating</option>
+                <option value="3">3+ Stars</option>
+                <option value="4">4+ Stars</option>
+                <option value="4.5">4.5+ Stars</option>
+              </select>
             </div>
             {activeFilters > 0 && (
               <div style={{ display: 'flex', alignItems: 'flex-end' }}>

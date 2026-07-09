@@ -286,8 +286,13 @@ exports.getAllProperties = async (req, res) => {
           availableProperties.push({ ...prop, is_available: true });
         } else if (availability_status === 'booked' && !isAvailable) {
           availableProperties.push({ ...prop, is_available: false });
-        } else if (!availability_status || availability_status === 'all') {
+        } else if (availability_status === 'all') {
           availableProperties.push({ ...prop, is_available: isAvailable });
+        } else if (!availability_status) {
+          // Default: if dates are provided, only return available properties
+          if (isAvailable) {
+            availableProperties.push({ ...prop, is_available: true });
+          }
         }
       }
 

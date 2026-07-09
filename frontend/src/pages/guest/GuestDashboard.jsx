@@ -22,8 +22,8 @@ export default function GuestDashboard() {
   }, []);
 
   const upcoming = bookings.filter(b => b.status === 'confirmed' && new Date(b.checkin_date) >= new Date());
-  const past = bookings.filter(b => b.status === 'confirmed' && new Date(b.checkin_date) < new Date());
-  const totalSpent = bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + Number(b.total_price), 0);
+  const past = bookings.filter(b => (b.status === 'completed') || (b.status === 'confirmed' && new Date(b.checkin_date) < new Date()));
+  const totalSpent = bookings.filter(b => b.status === 'confirmed' || b.status === 'completed').reduce((s, b) => s + Number(b.total_price), 0);
 
   return (
     <DashboardLayout>

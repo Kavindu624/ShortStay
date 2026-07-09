@@ -30,8 +30,9 @@ export default function AdminPayments() {
   
   // Calculate total commission exactly from Payouts if available, else estimate
   const totalCommissionAmount = completedPayments.reduce((s, p) => {
-    if (p.Payout?.commission_amount) {
-      return s + Number(p.Payout.commission_amount);
+    const payout = p.payout || p.Payout;
+    if (payout?.commission_amount) {
+      return s + Number(payout.commission_amount);
     }
     return s + (Number(p.amount || 0) * (sysCommissionRate / 100));
   }, 0);
@@ -103,13 +104,15 @@ export default function AdminPayments() {
                 let commAmount = amount * (sysCommissionRate / 100);
                 let payoutAmount = amount - commAmount;
                 
-                if (p.Payout?.commission_amount) {
-                  commAmount = Number(p.Payout.commission_amount);
-                  payoutAmount = Number(p.Payout.payout_amount);
+                const payout = p.payout || p.Payout;
+                if (payout?.commission_amount) {
+                  commAmount = Number(payout.commission_amount);
+                  payoutAmount = Number(payout.payout_amount);
                 }
 
-                const guestName = p.Booking?.guest?.name || 'Unknown';
-                const hostName = p.Booking?.property?.host?.name || 'Unknown';
+                const booking = p.booking || p.Booking;
+                const guestName = booking?.guest?.name || 'Unknown';
+                const hostName = booking?.property?.host?.name || 'Unknown';
                 
                 // Format dates to YYYY-MM-DD
                 const dateObj = new Date(p.payment_date || p.created_at);

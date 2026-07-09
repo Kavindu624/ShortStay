@@ -185,8 +185,8 @@ export default function App() {
           <Route path="/pm/dashboard" element={<ProtectedRoute role="accountant"><PMDashboard /></ProtectedRoute>} />
           <Route path="/pm/payouts" element={<ProtectedRoute role="accountant"><PMPayouts /></ProtectedRoute>} />
           <Route path="/pm/payments" element={<ProtectedRoute role="accountant"><PMPayments /></ProtectedRoute>} />
-          <Route path="/pm/disputes" element={<ProtectedRoute role="accountant"><PMPayments /></ProtectedRoute>} />
           <Route path="/pm/reports" element={<ProtectedRoute role="accountant"><PMReports /></ProtectedRoute>} />
+          <Route path="/pm/settings" element={<ProtectedRoute role="accountant"><GuestSettings /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

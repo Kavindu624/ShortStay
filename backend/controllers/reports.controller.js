@@ -437,9 +437,9 @@ exports.refundsReport = async (req, res) => {
 // GET /api/payments/reports/host-payouts?format=csv
 exports.hostPayoutsReport = async (req, res) => {
   try {
-    // Confirmed bookings that have been paid (payment exists)
+    // Confirmed and completed bookings that have been paid (payment exists)
     const paidBookings = await Booking.findAll({
-      where: { status: 'confirmed' },
+      where: { status: { [Op.in]: ['confirmed', 'completed'] } },
       include: [
         { model: Payment },
         { model: Property, as: 'property', include: [{ model: User, as: 'host', attributes: ['name', 'email'] }] },
@@ -455,25 +455,28 @@ exports.hostPayoutsReport = async (req, res) => {
       if (!hid) return;
       if (!payoutByHost[hid]) {
         payoutByHost[hid] = {
-          host_id:     hid,
-          host:        b.property?.host?.name,
-          host_email:  b.property?.host?.email,
-          bookings:    0,
-          amount_due:  0,
+          host_id:        hid,
+          host_name:      b.property?.host?.name,
+          host_email:     b.property?.host?.email,
+          booking_count:  0,
+          total_earnings: 0,
         };
       }
-      payoutByHost[hid].bookings   += 1;
-      payoutByHost[hid].amount_due += parseFloat(b.payment?.amount || 0);
+      payoutByHost[hid].booking_count   += 1;
+      payoutByHost[hid].total_earnings  += parseFloat(b.payment?.amount || 0);
     });
 
-    const rows = Object.values(payoutByHost).map(r => ({
-      ...r,
-      amount_due: parseFloat(r.amount_due.toFixed(2)),
-    }));
+    // Sort by earnings descending
+    const rows = Object.values(payoutByHost)
+      .map(r => ({
+        ...r,
+        total_earnings: parseFloat(r.total_earnings.toFixed(2)),
+      }))
+      .sort((a, b) => b.total_earnings - a.total_earnings);
 
     sendReport(req, res, 'host_payouts_report', rows, {
       total_hosts:          rows.length,
-      total_amount:         parseFloat(rows.reduce((s, r) => s + r.amount_due, 0).toFixed(2)),
+      total_amount:         parseFloat(rows.reduce((s, r) => s + r.total_earnings, 0).toFixed(2)),
       pending_payout_count: pending.length,
     });
   } catch (err) {
