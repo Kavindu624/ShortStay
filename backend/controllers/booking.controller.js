@@ -474,7 +474,7 @@ exports.getMyBookings = async (req, res) => {
         {
           model: Property,
           as: 'property',
-          attributes: ['property_id', 'title', 'address', 'price_per_night', 'city', 'property_type'],
+          attributes: ['property_id', 'title', 'address', 'price_per_night', 'property_type'],
         },
       ],
       order: [['created_at', 'DESC']],
@@ -527,7 +527,7 @@ exports.getBooking = async (req, res) => {
         {
           model: Property,
           as: 'property',
-          attributes: ['property_id', 'title', 'address', 'price_per_night', 'city', 'property_type', 'host_id'],
+          attributes: ['property_id', 'title', 'address', 'price_per_night', 'property_type', 'host_id'],
         },
         {
           model: User,

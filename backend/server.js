@@ -23,6 +23,29 @@ const app = express();
 app.use(requestLogger);          // HTTP request log  (morgan)
 app.use(responseTimeMonitor);    // X-Response-Time header + slow-req warning
 
+// Is this origin's HOST (not the raw header text) a private-network IP
+// literal? A plain `origin.startsWith('http://192.168.')` check is a
+// substring match on the whole header, so a real, attacker-registrable
+// hostname like `http://192.168.evil.com` would pass it too — it "starts
+// with" the right text without being that IP at all. Parsing with `URL`
+// and checking only the resulting `hostname` against a numeric-octet
+// pattern closes that gap: a hostname has to actually BE 192.168.x.x, not
+// merely start with those characters.
+function isPrivateNetworkOrigin(origin) {
+  let url;
+  try {
+    url = new URL(origin);
+  } catch {
+    return false;
+  }
+  const host = url.hostname;
+  return (
+    /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
+    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host)
+  );
+}
+
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests from any localhost port (dev), the configured FRONTEND_URL, and local network IPs
@@ -34,11 +57,9 @@ app.use(cors({
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
     ];
-    
-    // Allow local network IPs like 192.168.x.x, 10.x.x.x, 172.x.x.x for mobile testing
-    const isLocalNetwork = origin && (origin.startsWith('http://192.168.') || origin.startsWith('http://10.') || origin.startsWith('http://172.'));
 
-    if (!origin || allowed.includes(origin) || isLocalNetwork) {
+    // Allow local network IPs like 192.168.x.x, 10.x.x.x, 172.16-31.x.x for mobile testing
+    if (!origin || allowed.includes(origin) || isPrivateNetworkOrigin(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: Origin '${origin}' not allowed`));

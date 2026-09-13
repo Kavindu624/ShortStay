@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { useEffect } from 'react';
 
@@ -81,17 +81,25 @@ function RoleRedirect() {
   return <Navigate to={home[user.role] || '/'} replace />;
 }
 
-/** Handles the Google OAuth callback at /auth/callback?token=xxx&role=xxx&name=xxx */
+/** Handles the Google OAuth callback at /auth/callback#token=xxx&role=xxx&name=xxx
+ *  The backend puts these in the URL FRAGMENT (not the query string) so the
+ *  token never travels to a server/proxy/CDN log. We read it from
+ *  window.location.hash rather than useSearchParams (which only sees the
+ *  query string), and scrub it from history immediately so a token that's
+ *  valid for 7 days doesn't sit in browser history indefinitely. */
 function OAuthCallback() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
   const { } = useAuth(); // just to ensure context is ready
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const token = params.get('token');
     const role = params.get('role');
     const name = params.get('name');
     const userId = params.get('user_id');
+
+    // Remove the token from the visible URL/history before doing anything else.
+    window.history.replaceState(null, '', window.location.pathname);
 
     if (token) {
       localStorage.setItem('token', token);

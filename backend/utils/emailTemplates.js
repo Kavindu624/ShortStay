@@ -1,3 +1,18 @@
+// These templates build HTML emails by string interpolation. Any value that
+// originates from user input (a name, a complaint description, a review
+// response, ...) must be escaped before landing in the markup below, or a
+// guest/host can embed live links/images/styled text that renders in the
+// recipient's (admin's or another user's) inbox — an HTML-injection/phishing
+// vector, not classic browser XSS, but just as real over email.
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 exports.bookingConfirmationEmail = (guestName, property, booking) => `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px;">
     <div style="background: #e74c3c; padding: 20px; border-radius: 8px 8px 0 0;">
@@ -269,10 +284,10 @@ exports.hostRespondedToReviewEmail = (guestName, propertyTitle, response) => `
     </div>
     <div style="background: #f8f8f8; padding: 20px;">
       <h3>Host Replied to Your Review 💬</h3>
-      <p>Dear <strong>${guestName}</strong>,</p>
-      <p>The host of <strong>"${propertyTitle}"</strong> has replied to your review:</p>
+      <p>Dear <strong>${escapeHtml(guestName)}</strong>,</p>
+      <p>The host of <strong>"${escapeHtml(propertyTitle)}"</strong> has replied to your review:</p>
       <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; border-left: 4px solid #2c3e7a;">
-        <p style="margin: 0; font-style: italic;">"${response}"</p>
+        <p style="margin: 0; font-style: italic;">"${escapeHtml(response)}"</p>
       </div>
       <p style="margin-top: 20px; color: #666;">Thank you for sharing your experience on ShortStay!</p>
     </div>
@@ -330,13 +345,13 @@ exports.complaintSubmittedAdminEmail = (adminName, guestName, bookingId, descrip
     </div>
     <div style="background: #f8f8f8; padding: 20px;">
       <h3>New Complaint Submitted 🚨</h3>
-      <p>Dear <strong>${adminName}</strong>,</p>
+      <p>Dear <strong>${escapeHtml(adminName)}</strong>,</p>
       <p>A guest has submitted a new complaint that requires your attention.</p>
       <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; border-left: 4px solid #e74c3c;">
-        <p><strong>Guest:</strong> ${guestName}</p>
+        <p><strong>Guest:</strong> ${escapeHtml(guestName)}</p>
         <p><strong>Booking ID:</strong> #${bookingId}</p>
-        <p><strong>Priority:</strong> ${priority}</p>
-        <p><strong>Description:</strong> ${description}</p>
+        <p><strong>Priority:</strong> ${escapeHtml(priority)}</p>
+        <p><strong>Description:</strong> ${escapeHtml(description)}</p>
       </div>
       <p style="margin-top: 20px;">Please log in to the admin dashboard to review and take action.</p>
     </div>
