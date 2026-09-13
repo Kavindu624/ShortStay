@@ -472,7 +472,7 @@ exports.getReceipt = async (req, res) => {
       include: [{
         model: Booking,
         include: [
-          { model: Property, as: 'property', attributes: ['title', 'address', 'property_type'] },
+          { model: Property, as: 'property', attributes: ['title', 'address', 'property_type', 'host_id'] },
           { model: User,     as: 'guest',    attributes: ['name', 'email'] },
         ],
       }],
@@ -480,11 +480,13 @@ exports.getReceipt = async (req, res) => {
 
     if (!payment) return res.status(404).json({ message: 'Payment not found' });
 
-    // Guests may only see their own receipt
-    if (
-      req.user.role === 'guest' &&
-      payment.booking?.guest_id !== req.user.user_id
-    ) {
+    // A receipt may only be viewed by: the guest who made the booking,
+    // the host who owns the property, or platform staff (admin/accountant).
+    const isOwningGuest = req.user.role === 'guest' && payment.booking?.guest_id === req.user.user_id;
+    const isOwningHost  = req.user.role === 'host'  && payment.booking?.property?.host_id === req.user.user_id;
+    const isStaff       = req.user.role === 'admin' || req.user.role === 'accountant';
+
+    if (!isOwningGuest && !isOwningHost && !isStaff) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 

@@ -26,6 +26,14 @@ function dateWhere(field, from, to) {
 }
 
 // ─── Helper: convert array of objects to CSV string ─────────────────────────
+// Guards against CSV/formula injection: a cell whose text starts with
+// =, +, -, or @ is interpreted as a formula by Excel/LibreOffice/Sheets when
+// the export is opened, so a user-controlled field (name, description, ...)
+// could otherwise run attacker-chosen formulas in a report viewer's spreadsheet.
+function sanitizeCsvCell(s) {
+  return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+}
+
 function toCSV(rows) {
   if (!rows.length) return '';
   const headers = Object.keys(rows[0]);
@@ -34,7 +42,7 @@ function toCSV(rows) {
     lines.push(
       headers.map(h => {
         const v = row[h] ?? '';
-        const s = String(v).replace(/"/g, '""');
+        const s = sanitizeCsvCell(String(v).replace(/"/g, '""'));
         return /[,"\n]/.test(s) ? `"${s}"` : s;
       }).join(',')
     );

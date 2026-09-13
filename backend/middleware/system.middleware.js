@@ -23,10 +23,13 @@ const globalRateLimit = rateLimit({
 });
 
 // ─── Auth Rate Limiter ────────────────────────────────────────────────────────
-// TEMPORARILY DISABLED for development — set max back to 10 for production
+// Limits login/register/password-reset attempts specifically, since these are
+// the endpoints brute-force and credential-stuffing attacks actually target —
+// the much higher globalRateLimit above isn't tight enough to stop that on its
+// own.
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

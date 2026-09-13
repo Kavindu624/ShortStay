@@ -86,9 +86,13 @@ router.get('/google/callback',
         { expiresIn: '7d' }
       );
 
-      // Redirect to frontend with token
+      // Redirect to frontend with the token in the URL FRAGMENT, not the query
+      // string. Fragments (#...) are never sent to servers/proxies/CDNs, so
+      // they never end up in access logs along the redirect chain — unlike a
+      // query string, which would leak this 7-day session token into any log
+      // that records full request URLs.
       res.redirect(
-        `${process.env.FRONTEND_URL}/auth/callback?token=${token}&user_id=${user.user_id}&role=${user.role}&name=${encodeURIComponent(user.name)}`
+        `${process.env.FRONTEND_URL}/auth/callback#token=${token}&user_id=${user.user_id}&role=${user.role}&name=${encodeURIComponent(user.name)}`
       );
     } catch (err) {
       res.redirect(

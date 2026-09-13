@@ -18,13 +18,15 @@ const storage = multer.diskStorage({
   }
 });
 
+// Extension alone is just a filename the client chose — check it AND the
+// declared MIME type agree on "this is actually a jpeg/png", as defense in
+// depth against a non-image file being renamed to a trusted-looking extension.
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png/;
-  const extname = allowedTypes.test(
-    path.extname(file.originalname).toLowerCase()
-  );
+  const allowedExt = /jpeg|jpg|png/;
+  const extOk  = allowedExt.test(path.extname(file.originalname).toLowerCase());
+  const mimeOk = /^image\/(jpeg|png)$/.test(file.mimetype);
 
-  if (extname) {
+  if (extOk && mimeOk) {
     cb(null, true);
   } else {
     cb(new Error('Only jpg, jpeg, png images allowed'));
