@@ -175,7 +175,7 @@ export default function PMDashboard() {
             
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {payments.length === 0 && <div style={{ color: 'var(--text-muted)' }}>No transactions yet</div>}
-              {payments.map((p, i) => (
+              {payments.map((p) => (
                 <div key={p.payment_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: '1px solid var(--border)' }}>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 14, color: '#111827', marginBottom: 4 }}>Payment #{p.payment_id}</div>

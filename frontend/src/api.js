@@ -81,7 +81,7 @@ api.interceptors.response.use(
 
 // Override get/post/put/patch/delete when mock mode is on
 if (MOCK) {
-  const wrap = (method) => (url, bodyOrConfig, config) => {
+  const wrap = (method) => (url, bodyOrConfig) => {
     const body = method === 'get' ? null : bodyOrConfig;
     return mockRequest(method, url, body);
   };

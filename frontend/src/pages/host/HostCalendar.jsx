@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Calendar, ChevronLeft, ChevronRight, Plus, X, RotateCcw, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, X, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 function buildCalendar(year, month) {

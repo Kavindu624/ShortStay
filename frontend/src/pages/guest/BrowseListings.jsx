@@ -4,7 +4,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import PublicLayout from '../../components/PublicLayout';
 import api from '../../api';
 import { getImageUrl } from '../../utils';
-import { MapPin, Star, Search, Filter, X, Users, ChevronDown, BadgeCheck } from 'lucide-react';
+import { MapPin, Star, Search, Filter, X, Users, BadgeCheck } from 'lucide-react';
 
 const PROPERTY_TYPES = ['', 'apartment', 'house', 'villa', 'room', 'bungalow', 'cabin'];
 

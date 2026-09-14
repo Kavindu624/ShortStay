@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { ShieldCheck, CheckCircle2, XCircle, Clock, ClipboardList } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, ClipboardList } from 'lucide-react';
 
 export default function AdminVerifications() {
   const [stats, setStats] = useState(null);

@@ -6,7 +6,7 @@ import { showAlert } from '../../utils/alert';
 
 export default function PMPayouts() {
   const [payouts, setPayouts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
 
   const load = () => {

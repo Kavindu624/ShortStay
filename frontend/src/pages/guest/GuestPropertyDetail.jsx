@@ -95,7 +95,7 @@ export default function GuestPropertyDetail({ publicMode = false }) {
 
     setBooking(true); setMsg('');
     try {
-      const res = await api.post('/bookings', { property_id: id, checkin_date: checkin, checkout_date: checkout });
+      await api.post('/bookings', { property_id: id, checkin_date: checkin, checkout_date: checkout });
       setShowSuccessPopup(true);
     } catch (err) { setMsg(err.response?.data?.message || 'Booking failed.'); }
     finally { setBooking(false); }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { showAlert } from '../../utils/alert';
-import { MapPin, Image as ImageIcon, FileText, CheckCircle, XCircle, Calendar, UploadCloud, FileVideo } from 'lucide-react';
+import { MapPin, Image as ImageIcon, CheckCircle, XCircle, Calendar, UploadCloud, FileVideo } from 'lucide-react';
 
 export default function InspectorPending() {
   const [properties, setProperties] = useState([]);
@@ -31,7 +31,7 @@ export default function InspectorPending() {
   };
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const handleSchedule = async () => {

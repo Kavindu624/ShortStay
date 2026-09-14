@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
-import { Mail, Eye, EyeOff, Building2 } from 'lucide-react';
+import { Mail, Eye, EyeOff } from 'lucide-react';
 import api from '../../api';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -71,7 +71,7 @@ export default function Register() {
             // Email was verified on another device!
             navigate('/login', { state: { message: 'Email verified successfully! Please login.' } });
           }
-        } catch (err) {
+        } catch {
           // Ignore polling errors
         }
       }, 3000);

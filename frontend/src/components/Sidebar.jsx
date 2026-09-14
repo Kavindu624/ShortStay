@@ -1,8 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import {
-  LayoutDashboard, Home, Calendar, MessageSquare, DollarSign, Star,
-  Settings, LogOut, Users, Building2, FileText, Search, Bell,
+  LayoutDashboard, Home, Calendar, DollarSign, Star,
+  Settings, LogOut, Users, Building2,
   ShieldCheck, ClipboardList, CreditCard, BarChart3, AlertCircle, Map
 } from 'lucide-react';
 
@@ -49,14 +49,6 @@ const menuByRole = {
     { label: 'Reports', icon: BarChart3, path: '/pm/reports' },
     { label: 'Settings', icon: Settings, path: '/pm/settings' },
   ],
-};
-
-const panelLabel = {
-  guest: 'Guest Panel',
-  host: 'Host Panel',
-  admin: 'Admin Panel',
-  verifier: 'Verifier Panel',
-  accountant: 'Accountant Panel',
 };
 
 export default function Sidebar() {

@@ -20,12 +20,15 @@ const PUBLIC_PAGES = [
 ];
 
 export default function RoleSwitcher() {
+  // Hooks must run unconditionally on every render — the early `!auth`
+  // return has to come after all of them, not before.
   const auth = useAuth();
-  const user = auth?.user;
-  const switchMockRole = auth?.switchMockRole;
-  if (!auth) return null;
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  if (!auth) return null;
+  const user = auth.user;
+  const switchMockRole = auth.switchMockRole;
 
   const handleRole = (role) => {
     switchMockRole(role);

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Calendar } from 'lucide-react';
 
 const statusBadge = { completed: 'badge-success', confirmed: 'badge-success', approved: 'badge-info', pending: 'badge-warning', cancelled: 'badge-error', rejected: 'badge-error' };
 

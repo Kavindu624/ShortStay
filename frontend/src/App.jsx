@@ -89,7 +89,6 @@ function RoleRedirect() {
  *  valid for 7 days doesn't sit in browser history indefinitely. */
 function OAuthCallback() {
   const navigate = useNavigate();
-  const { } = useAuth(); // just to ensure context is ready
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));

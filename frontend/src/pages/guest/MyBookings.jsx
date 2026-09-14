@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { showAlert } from '../../utils/alert';
-import { Download, MessageSquare, XCircle, CreditCard, Star, FileText } from 'lucide-react';
+import { Download, XCircle, CreditCard, Star, FileText } from 'lucide-react';
 import { exportToCSV } from '../../utils';
 
 const statusBadge = { 

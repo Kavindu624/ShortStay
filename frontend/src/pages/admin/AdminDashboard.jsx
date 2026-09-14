@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Users, Building2, DollarSign, BarChart3, AlertCircle, ClipboardList, CheckCircle, Clock } from 'lucide-react';
+import { Users, Building2, DollarSign, BarChart3, AlertCircle, ClipboardList, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 export default function AdminDashboard() {

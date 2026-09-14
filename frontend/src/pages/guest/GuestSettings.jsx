@@ -17,7 +17,6 @@ export default function GuestSettings() {
   const [notifPrefs, setNotifPrefs] = useState({ email_system: true, email_booking: true, email_payment: true });
   const [uploading, setUploading] = useState(false);
   const [avatar, setAvatar] = useState(user?.profile_picture || null);
-  const [activeTab, setActiveTab] = useState('profile');
   const [deleteModal, setDeleteModal] = useState(false);
   const fileRef = useRef();
 
@@ -85,7 +84,7 @@ export default function GuestSettings() {
       setMsg4('Preferences updated successfully!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setMsg4(''), 3000);
-    } catch (err) { setMsg4('Failed to update preferences'); }
+    } catch { setMsg4('Failed to update preferences'); }
   };
 
   const uploadAvatar = async e => {

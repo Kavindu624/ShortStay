@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { AlertCircle, CheckCircle, Plus, ChevronDown } from 'lucide-react';
+import { CheckCircle, Plus } from 'lucide-react';
 
 const prioBadge = { high: 'badge-error', medium: 'badge-warning', low: 'badge-info' };
 const statusBadge = { open: 'badge-warning', in_progress: 'badge-info', resolved: 'badge-success', closed: 'badge-gray' };

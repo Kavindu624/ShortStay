@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Download, FileText, TrendingUp, BarChart2 } from 'lucide-react';
+import { Download, FileText, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function PMReports() {
@@ -171,7 +171,7 @@ export default function PMReports() {
             <div style={{ height: 250, position: 'relative' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={propertyTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
+                  <Pie data={propertyTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ cx, cy, midAngle, outerRadius, value, index }) => {
                     const RADIAN = Math.PI / 180;
                     const radius = outerRadius + 20;
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
