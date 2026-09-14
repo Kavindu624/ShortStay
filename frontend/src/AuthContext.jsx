@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
     }
     try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
   });
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
@@ -41,7 +41,9 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    try { await api.post('/auth/logout'); } catch {}
+    // Best-effort: still clear the local session below even if the
+    // logout API call fails (e.g. token already expired).
+    try { await api.post('/auth/logout'); } catch { /* ignore */ }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(MOCK ? MOCK_USERS.admin : null);
@@ -91,4 +93,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// Splitting this hook into its own file isn't worth the churn of updating
+// ~10 imports for a dev-only Fast Refresh nicety.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

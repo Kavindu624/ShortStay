@@ -3,7 +3,7 @@ import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { showAlert } from '../../utils/alert';
 import { Link } from 'react-router-dom';
-import { Users, Trash2, Plus, ShieldOff, ShieldCheck, AlertTriangle, LineChart } from 'lucide-react';
+import { Trash2, Plus, ShieldOff, ShieldCheck, AlertTriangle, LineChart } from 'lucide-react';
 
 const roleColors = { guest: 'badge-info', host: 'badge-success', admin: 'badge-error', verifier: 'badge-warning', accountant: 'badge-primary' };
 

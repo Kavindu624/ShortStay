@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { showAlert } from '../../utils/alert';
-import { Check, X, MapPin, UserPlus, ShieldCheck, Eye } from 'lucide-react';
+import { Check, X, MapPin, UserPlus } from 'lucide-react';
 
 const vBadge = {
   none: 'badge-gray',

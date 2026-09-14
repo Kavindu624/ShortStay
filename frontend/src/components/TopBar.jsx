@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bell, User, X, Check, CheckCheck } from 'lucide-react';
+import { Bell, User, X, CheckCheck } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import api from '../api';
 import { getProfileUrl } from '../utils';
@@ -37,7 +37,7 @@ export default function TopBar() {
         const r = await api.get('/notifications?limit=15');
         setNotifications(r.data?.notifications || r.data || []);
         if (r.data?.unread_count !== undefined) setUnread(r.data.unread_count);
-      } catch {}
+      } catch { /* keep whatever was already showing */ }
     }
   };
 
@@ -46,7 +46,7 @@ export default function TopBar() {
       await api.put('/notifications/read-all');
       setUnread(0);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    } catch {}
+    } catch { /* non-critical — panel just won't reflect the change */ }
   };
 
   const markRead = async (id) => {
@@ -54,7 +54,7 @@ export default function TopBar() {
       await api.put(`/notifications/${id}/read`);
       setUnread(prev => Math.max(0, prev - 1));
       setNotifications(prev => prev.map(n => n.notification_id === id ? { ...n, is_read: true } : n));
-    } catch {}
+    } catch { /* non-critical — panel just won't reflect the change */ }
   };
 
   const deleteNotif = async (id, e) => {
@@ -62,7 +62,7 @@ export default function TopBar() {
     try {
       await api.delete(`/notifications/${id}`);
       setNotifications(prev => prev.filter(n => n.notification_id !== id));
-    } catch {}
+    } catch { /* non-critical — panel just won't reflect the change */ }
   };
 
   // Close panel on outside click

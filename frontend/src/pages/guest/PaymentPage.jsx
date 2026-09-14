@@ -3,12 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { ArrowLeft, CreditCard, CheckCircle, XCircle } from 'lucide-react';
-import { useAuth } from '../../AuthContext';
 
 export default function PaymentPage() {
   const { bookingId } = useParams();
   const nav = useNavigate();
-  const { user } = useAuth();
   const [booking, setBooking] = useState(null);
   const [membershipTier, setMembershipTier] = useState('basic');
   const [form, setForm] = useState({ card_number: '', expiry: '', cvv: '', first_name: '', last_name: '', address: '', city: '', province: '', postal_code: '', mobile: '', email: '' });

@@ -2,23 +2,20 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Download, CreditCard, RefreshCw, FileText, X } from 'lucide-react';
+import { Download, CreditCard, FileText, X } from 'lucide-react';
 
 export default function GuestWallet() {
   const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [receipt, setReceipt] = useState(null);
-  const [receiptLoading, setReceiptLoading] = useState(false);
 
   const viewReceipt = async (bookingId) => {
-    setReceiptLoading(true);
     try {
       const r = await api.get(`/payments/receipt/${bookingId}`);
       // Backend returns { receipt: { ... } }
       setReceipt(r.data?.receipt || r.data);
     } catch { setReceipt({ error: 'Receipt not found' }); }
-    finally { setReceiptLoading(false); }
   };
 
   useEffect(() => {

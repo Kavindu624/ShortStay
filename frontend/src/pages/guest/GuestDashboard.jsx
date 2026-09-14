@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
-import { Calendar, MapPin, Star, ArrowRight } from 'lucide-react';
+import { Star, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../AuthContext';
 
 export default function GuestDashboard() {

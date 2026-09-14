@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { showAlert } from '../../utils/alert';
-import { Download, Search, Filter, Eye, Edit, Ban, Star, XCircle } from 'lucide-react';
+import { Download, Filter, Eye, Edit, Ban, Star, XCircle } from 'lucide-react';
 
 export default function InspectorHistory() {
   const [history, setHistory] = useState([]);
@@ -29,7 +29,7 @@ export default function InspectorHistory() {
   };
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   // Filter history by search term and status
@@ -53,7 +53,7 @@ export default function InspectorHistory() {
 
   // Reset to page 1 on search or filter
   useEffect(() => { setCurrentPage(1); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [search, statusFilter]);
 
   const handleExport = () => {

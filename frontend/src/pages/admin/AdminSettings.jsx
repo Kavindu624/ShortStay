@@ -62,7 +62,7 @@ export default function AdminSettings() {
       setMsg('Platform settings saved successfully!');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setMsg(''), 3000);
-    } catch (err) {
+    } catch {
       setMsg('Failed to save settings.');
     } finally {
       setSaving(false);
