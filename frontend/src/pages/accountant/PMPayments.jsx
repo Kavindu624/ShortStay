@@ -34,7 +34,7 @@ export default function PMPayments() {
         setModalConfig(null);
         try {
           await api.post(`/payments/refund/${bookingId}`, { reason });
-          showAlert('Refund processed successfully!');
+          showAlert('Refund processed successfully!', 'success');
           load();
         } catch (err) {
           console.error(err);
@@ -53,7 +53,7 @@ export default function PMPayments() {
         setModalConfig(null);
         try {
           await api.put(`/payments/status/${paymentId}`, { status });
-          showAlert(`Payment status updated to ${status}`);
+          showAlert(`Payment status updated to ${status}`, 'success');
           load();
         } catch (err) {
           console.error(err);

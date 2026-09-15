@@ -9,16 +9,19 @@ export default function PMReports() {
   const [stats, setStats] = useState(null);
   const [properties, setProperties] = useState([]);
   const [payouts, setPayouts] = useState([]);
+  const [occupancyReport, setOccupancyReport] = useState(null);
 
   useEffect(() => {
     Promise.allSettled([
       api.get('/dashboard/payment-manager'),
       api.get('/properties'),
-      api.get('/payouts')
-    ]).then(([sRes, propRes, payRes]) => {
+      api.get('/payouts'),
+      api.get('/payments/reports/occupancy'),
+    ]).then(([sRes, propRes, payRes, occRes]) => {
       if (sRes.status === 'fulfilled') setStats(sRes.value.data);
       if (propRes.status === 'fulfilled') setProperties(propRes.value.data?.properties || propRes.value.data || []);
       if (payRes.status === 'fulfilled') setPayouts(payRes.value.data?.payouts || payRes.value.data || []);
+      if (occRes.status === 'fulfilled') setOccupancyReport(occRes.value.data?.data || null);
     });
   }, []);
 
@@ -30,9 +33,12 @@ export default function PMReports() {
   }));
   if (revenueData.length === 0) revenueData = [{ month: 'N/A', revenue: 0 }];
 
-  let occupancyData = Object.entries(monthlyBreakdown).slice(-6).map(([month, val]) => ({
-    month: month.split(' ')[0].substring(0, 3),
-    rate: Math.min(100, Math.max(10, (val / 10000) * 100)) // pseudo-occupancy based on revenue
+  // Real occupancy = booked property_availability slots ÷ all slots hosts have
+  // published as bookable, per month (see reports.controller.js:occupancyReport).
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  let occupancyData = (occupancyReport || []).map(r => ({
+    month: MONTH_NAMES[r.month - 1],
+    rate: r.occupancy_rate,
   }));
   if (occupancyData.length === 0) occupancyData = [{ month: 'N/A', rate: 0 }];
 

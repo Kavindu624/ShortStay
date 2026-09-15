@@ -26,10 +26,12 @@ const globalRateLimit = rateLimit({
 // Limits login/register/password-reset attempts specifically, since these are
 // the endpoints brute-force and credential-stuffing attacks actually target —
 // the much higher globalRateLimit above isn't tight enough to stop that on its
-// own.
+// own. Relaxed outside production so repeated local testing (registering,
+// retrying a login, polling verification status) doesn't get locked out —
+// same NODE_ENV convention already used below for error-detail exposure.
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'production' ? 10 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

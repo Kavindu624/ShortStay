@@ -457,4 +457,22 @@ router.get('/reports/refunds', auth, role('admin', 'accountant'), rc.refundsRepo
  */
 router.get('/reports/host-payouts', auth, role('admin', 'accountant'), rc.hostPayoutsReport);
 
+/**
+ * @swagger
+ * /api/payments/reports/occupancy:
+ *   get:
+ *     summary: Monthly occupancy report (admin & accountant)
+ *     tags: [Payments]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema: { type: integer }
+ *     responses:
+ *       200:
+ *         description: Booked vs. available property-availability slots per month, with occupancy_rate
+ */
+router.get('/reports/occupancy', auth, role('admin', 'accountant'), rc.occupancyReport);
+
 module.exports = router;

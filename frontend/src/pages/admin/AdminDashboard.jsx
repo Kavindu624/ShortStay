@@ -98,7 +98,7 @@ export default function AdminDashboard() {
           )}
         </div>
         <div className="card">
-          <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Revenue Trend</h3>
+          <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Monthly Revenue Trends</h3>
           {monthlyData.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 13 }}>No data available</div>
           ) : (

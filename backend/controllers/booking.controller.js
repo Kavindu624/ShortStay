@@ -151,11 +151,13 @@ exports.makeBooking = async (req, res) => {
       expires_at,
     });
 
-    // 6. Send guest confirmation email
+    // 6. Send guest booking-created email (booking is still 'pending' at this
+    // point — the host hasn't approved it yet, so avoid the word
+    // "Confirmation" here to not imply the 'confirmed' booking status)
     const guest = await User.findByPk(req.user.user_id);
     await sendEmail(
       guest.email,
-      'Booking Confirmation - ShortStay',
+      'Booking Created - ShortStay',
       bookingConfirmationEmail(guest.name, property, booking)
     );
 

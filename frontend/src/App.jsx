@@ -8,6 +8,10 @@ import About from './pages/public/About';
 import Contact from './pages/public/Contact';
 import PropertyDetail from './pages/public/PropertyDetail';
 import Terms from './pages/public/Terms';
+import Careers from './pages/public/Careers';
+import PrivacyPolicy from './pages/public/PrivacyPolicy';
+import Cookies from './pages/public/Cookies';
+import MemberTerms from './pages/public/MemberTerms';
 
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -128,6 +132,10 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/member-terms" element={<MemberTerms />} />
 
           {/* Public browse — no login required */}
           <Route path="/browse" element={<BrowseListings publicMode />} />

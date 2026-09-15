@@ -5,7 +5,6 @@ const { Op } = require('sequelize');
 const notify = require('../utils/notify');
 const logActivity = require('../utils/activityLogger');
 const sendEmail = require('../utils/sendEmail');
-const { inspectionScheduledEmail } = require('../utils/emailTemplates');
 
 // ─── GET PENDING PROPERTIES (Inspector) ──────────────────────────────────────
 // Properties that have requested verification and are not yet approved/rejected
@@ -422,63 +421,6 @@ exports.revokeVerificationBadge = async (req, res) => {
     );
 
     res.status(200).json({ message: 'Verification badge revoked', property });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
-};
-
-// ─── ASSIGN INSPECTOR TO PROPERTY (Admin only) ───────────────────────────────
-exports.assignInspector = async (req, res) => {
-  try {
-    const { property_id, inspector_id, scheduled_date } = req.body;
-
-    const property = await Property.findByPk(property_id);
-    if (!property) {
-      return res.status(404).json({ message: 'Property not found' });
-    }
-
-    const inspector = await User.findByPk(inspector_id);
-    if (!inspector || inspector.role !== 'verifier') {
-      return res.status(400).json({ message: 'Invalid verifier ID' });
-    }
-
-    const inspection = await Inspection.create({
-      property_id,
-      inspector_id,
-      scheduled_date: scheduled_date || null,
-      status: 'scheduled',
-    });
-
-    await property.update({ verification_status: 'inspecting' });
-
-    // Notify inspector — in-app
-    await notify(
-      inspector_id,
-      'New Inspection Assigned',
-      `You have been assigned to inspect property: "${property.title}". ${scheduled_date ? `Scheduled: ${scheduled_date}` : 'Please schedule at your earliest convenience.'}`,
-      'inspection_assigned',
-      property_id
-    );
-
-    // Notify host — in-app + email
-    await notify(
-      property.host_id,
-      'Inspection Scheduled 📅',
-      `A verifier has been assigned to verify your property "${property.title}".${scheduled_date ? ` Scheduled date: ${scheduled_date}.` : ''}`,
-      'inspection_scheduled',
-      property_id
-    );
-
-    const host = await User.findByPk(property.host_id, { attributes: ['name', 'email'] });
-    if (host) {
-      await sendEmail(
-        host.email,
-        'Inspection Scheduled for Your Property - ShortStay',
-        inspectionScheduledEmail(host.name, property.title, scheduled_date)
-      );
-    }
-
-    res.status(201).json({ message: 'Inspector assigned', inspection });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
