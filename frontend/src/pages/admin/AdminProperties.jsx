@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { showAlert } from '../../utils/alert';
-import { Check, X, MapPin, UserPlus } from 'lucide-react';
+import { Check, X, MapPin } from 'lucide-react';
 
 const vBadge = {
   none: 'badge-gray',
@@ -15,27 +15,15 @@ const vBadge = {
 
 export default function AdminProperties() {
   const [properties, setProperties] = useState([]);
-  const [inspectors, setInspectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
-  const [assignModal, setAssignModal] = useState(null); // property_id
-  const [selectedInspector, setSelectedInspector] = useState('');
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [assignMsg, setAssignMsg] = useState('');
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
 
   const load = () => {
     api.get('/admin/properties').then(r => setProperties(r.data || [])).catch(() => {}).finally(() => setLoading(false));
   };
-  useEffect(() => {
-    load();
-    // Load list of verifiers for assignment dropdown
-    api.get('/admin/users?role=verifier').then(r => {
-      const users = r.data?.users || r.data || [];
-      setInspectors(users.filter(u => u.role === 'verifier'));
-    }).catch(() => {});
-  }, []);
+  useEffect(load, []);
 
   const approve = async (id) => {
     try { await api.put(`/admin/properties/${id}/approve`); load(); }
@@ -50,24 +38,6 @@ export default function AdminProperties() {
       setRejectModal(null);
       load();
     } catch (err) { showAlert(err.response?.data?.message || 'Failed'); }
-  };
-
-  const openAssignModal = (id) => { setAssignModal(id); setSelectedInspector(''); setScheduledDate(''); setAssignMsg(''); };
-
-  const assignInspector = async () => {
-    if (!selectedInspector || !scheduledDate) {
-      showAlert('Please select a verifier and a scheduled date.');
-      return;
-    }
-    try {
-      await api.post('/inspector/assign', {
-        property_id: Number(assignModal),
-        inspector_id: Number(selectedInspector),
-        scheduled_date: scheduledDate
-      });
-      setAssignMsg('Inspector assigned successfully!');
-      setTimeout(() => { setAssignModal(null); load(); }, 1200);
-    } catch (err) { setAssignMsg(err.response?.data?.message || 'Failed to assign inspector'); }
   };
 
   const filtered = tab === 'all'
@@ -86,33 +56,6 @@ export default function AdminProperties() {
           </span>
         </div>
       </div>
-
-      {/* Assign modal */}
-      {assignModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: 400, maxWidth: '90%' }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Assign Inspector</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>{properties.find(p => p.property_id === assignModal)?.title || `Property #${assignModal}`}</p>
-            {assignMsg && <div className={`alert ${assignMsg.includes('successfully') ? 'alert-success' : 'alert-error'}`}>{assignMsg}</div>}
-            <div className="form-group">
-              <label className="form-label">Select Verifier</label>
-              <select className="form-input" value={selectedInspector} onChange={e => setSelectedInspector(e.target.value)}>
-                <option value="">-- Choose inspector --</option>
-                {inspectors.map(i => <option key={i.user_id} value={i.user_id}>{i.name} ({i.email})</option>)}
-              </select>
-              {inspectors.length === 0 && <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>No inspectors found. Create staff accounts first.</p>}
-            </div>
-            <div className="form-group">
-              <label className="form-label">Scheduled Date <span style={{color: 'red'}}>*</span></label>
-              <input type="date" className="form-input" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn-primary" onClick={assignInspector} disabled={!selectedInspector}>Assign</button>
-              <button className="btn-outline" onClick={() => setAssignModal(null)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Reject reason modal */}
       {rejectModal && (
@@ -197,13 +140,6 @@ export default function AdminProperties() {
                             <X size={11} /> Revoke
                           </button>
                         )}
-                        <button
-                          className="btn-outline btn-sm"
-                          onClick={() => openAssignModal(p.property_id)}
-                          title="Assign Inspector"
-                          style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <UserPlus size={11} /> Inspector
-                        </button>
                       </div>
                     </td>
                   </tr>

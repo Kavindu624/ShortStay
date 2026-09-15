@@ -12,7 +12,7 @@
 
 const {
   User, Property, Booking, Payment,
-  Complaint, Inspection, Review, ActivityLog,
+  Complaint, Inspection, Review, ActivityLog, PropertyAvailability,
 } = require('../models/index');
 const { Op } = require('sequelize');
 
@@ -320,6 +320,45 @@ exports.monthlyRevenueReport = async (req, res) => {
       year,
       total_revenue: parseFloat(rows.reduce((s, r) => s + r.revenue, 0).toFixed(2)),
     });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// GET /api/payments/reports/occupancy?year=&format=csv
+// Real occupancy rate = booked property_availability slots ÷ all slots hosts
+// have published as bookable, per month. (Previously the frontend derived a
+// placeholder "pseudo-occupancy" number from revenue instead of actual
+// availability data — this replaces that with the real calculation.)
+exports.occupancyReport = async (req, res) => {
+  try {
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+
+    const slots = await PropertyAvailability.findAll({
+      attributes: ['available_date', 'is_booked'],
+    });
+
+    const monthly = {};
+    for (let m = 1; m <= 12; m++) {
+      monthly[m] = { month: m, year, available_slots: 0, booked_slots: 0, occupancy_rate: 0 };
+    }
+
+    slots.forEach(s => {
+      const d = new Date(s.available_date);
+      if (d.getFullYear() !== year) return;
+      const m = d.getMonth() + 1;
+      monthly[m].available_slots += 1;
+      if (s.is_booked) monthly[m].booked_slots += 1;
+    });
+
+    const rows = Object.values(monthly).map(r => ({
+      ...r,
+      occupancy_rate: r.available_slots > 0
+        ? parseFloat(((r.booked_slots / r.available_slots) * 100).toFixed(1))
+        : 0,
+    }));
+
+    sendReport(req, res, `occupancy_${year}`, rows, { year });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

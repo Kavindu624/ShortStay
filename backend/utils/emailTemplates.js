@@ -19,9 +19,9 @@ exports.bookingConfirmationEmail = (guestName, property, booking) => `
       <h2 style="color: white; margin: 0;">ShortStay</h2>
     </div>
     <div style="background: #f8f8f8; padding: 20px;">
-      <h3>Booking Confirmation</h3>
+      <h3>Booking Created</h3>
       <p>Dear <strong>${guestName}</strong>,</p>
-      <p>Your booking has been successfully created!</p>
+      <p>Your booking has been successfully created and is now awaiting the host's approval.</p>
       <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
         <h4 style="color: #e74c3c;">Booking Details</h4>
         <p><strong>Property:</strong> ${property.title}</p>

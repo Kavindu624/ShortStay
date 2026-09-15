@@ -4,10 +4,13 @@ import api from '../../api';
 import { showAlert } from '../../utils/alert';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, ShieldOff, ShieldCheck, AlertTriangle, LineChart } from 'lucide-react';
+import { useAuth } from '../../AuthContext';
 
 const roleColors = { guest: 'badge-info', host: 'badge-success', admin: 'badge-error', verifier: 'badge-warning', accountant: 'badge-primary' };
+const NO_MEMBERSHIP_ROLES = ['admin', 'accountant', 'verifier', 'host']; // membership tiers are a guest-only concept
 
 export default function AdminUsers() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -117,27 +120,39 @@ export default function AdminUsers() {
                       <td>{u.email}</td>
                       <td>{u.phone || '—'}</td>
                       <td><span className={`badge ${roleColors[u.role] || 'badge-gray'}`}>{u.role}</span></td>
-                      <td>{u.membership_level ? <span className="badge badge-warning">{u.membership_level}</span> : '—'}</td>
+                      <td>
+                        {NO_MEMBERSHIP_ROLES.includes(u.role)
+                          ? <span className="badge badge-gray">Not Applicable</span>
+                          : u.membership_level
+                            ? <span className="badge badge-warning">{u.membership_level}</span>
+                            : '—'}
+                      </td>
                       <td><span className={`badge ${u.is_suspended ? 'badge-error' : 'badge-success'}`}>{u.is_suspended ? 'Suspended' : 'Active'}</span></td>
                       <td>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          {u.is_suspended ? (
-                            <button className="btn-success btn-sm" onClick={() => unsuspendUser(u.user_id)} title="Unsuspend" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
-                              <ShieldCheck size={14} />
-                            </button>
+                          {u.user_id === currentUser?.user_id ? (
+                            <span className="badge badge-gray" title="You can't suspend or delete your own account" style={{ alignSelf: 'center' }}>This is you</span>
                           ) : (
-                            <button className="btn-warning btn-sm" onClick={() => setShowSuspendFor(u.user_id)} title="Suspend" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
-                              <ShieldOff size={14} />
-                            </button>
+                            <>
+                              {u.is_suspended ? (
+                                <button className="btn-success btn-sm" onClick={() => unsuspendUser(u.user_id)} title="Unsuspend" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
+                                  <ShieldCheck size={14} />
+                                </button>
+                              ) : (
+                                <button className="btn-warning btn-sm" onClick={() => setShowSuspendFor(u.user_id)} title="Suspend" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
+                                  <ShieldOff size={14} />
+                                </button>
+                              )}
+                              <button className="btn-danger btn-sm" onClick={() => setDeleteModal(u)} title="Delete" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
+                                <Trash2 size={14} />
+                              </button>
+                            </>
                           )}
                           {u.role === 'host' && (
                             <Link to={`/admin/users/host/${u.user_id}`} className="btn-outline btn-sm" title="View Dashboard" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px', textDecoration: 'none' }}>
                               <LineChart size={14} />
                             </Link>
                           )}
-                          <button className="btn-danger btn-sm" onClick={() => setDeleteModal(u)} title="Delete" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px 8px' }}>
-                            <Trash2 size={14} />
-                          </button>
                         </div>
                       </td>
                     </tr>

@@ -1,3 +1,3 @@
-export function showAlert(message) {
-  window.dispatchEvent(new CustomEvent('GLOBAL_ALERT', { detail: message }));
+export function showAlert(message, type = 'error') {
+  window.dispatchEvent(new CustomEvent('GLOBAL_ALERT', { detail: { message, type } }));
 }

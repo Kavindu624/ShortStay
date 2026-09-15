@@ -27,6 +27,10 @@ exports.deleteUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    if (user.user_id === req.user.user_id) {
+      return res.status(400).json({ message: 'You cannot delete your own account.' });
+    }
+
     const force = req.query.force === 'true';
 
     if (user.role === 'guest') {
@@ -94,6 +98,10 @@ exports.suspendUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.user_id === req.user.user_id) {
+      return res.status(400).json({ message: 'You cannot suspend your own account.' });
     }
 
     if (user.is_suspended) {

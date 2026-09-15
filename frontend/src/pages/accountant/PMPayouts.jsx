@@ -42,7 +42,7 @@ export default function PMPayouts() {
       for (const id of pendingIds) {
         await api.post(`/payouts/process/${id}`);
       }
-      showAlert('Payouts processed successfully!');
+      showAlert('Payouts processed successfully!', 'success');
       load();
     } catch (err) {
       showAlert(err.response?.data?.message || 'Failed to process payouts');

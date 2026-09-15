@@ -299,32 +299,6 @@ router.get('/reports/approved-vs-rejected', auth, role('verifier'), reportsContr
 
 /**
  * @swagger
- * /api/inspector/assign:
- *   post:
- *     summary: Assign a verifier to a property (admin only)
- *     tags: [Inspector]
- *     security:
- *       - BearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [property_id, inspector_id]
- *             properties:
- *               property_id:  { type: integer, example: 3 }
- *               inspector_id: { type: integer, example: 7 }
- *     responses:
- *       200:
- *         description: Inspector assigned
- *       403:
- *         description: Forbidden — admins only
- */
-router.post('/assign', auth, role('admin'), inspectorController.assignInspector);
-
-/**
- * @swagger
  * /api/inspector/all:
  *   get:
  *     summary: Get all inspections system-wide (admin only)
