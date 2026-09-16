@@ -11,11 +11,14 @@ import { exportToCSV } from '../../utils';
 
 const PIE_COLORS = ['#1e3a8a', '#10b981', '#f59e0b', '#6b7280', '#ef4444'];
 
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export default function AdminReports() {
   const [monthly, setMonthly] = useState([]);
   const [byProp, setByProp] = useState([]);
   const [refunds, setRefunds] = useState([]);
   const [hosts, setHosts] = useState([]);
+  const [occupancyReport, setOccupancyReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [genLoading, setGenLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('revenue');
@@ -27,11 +30,13 @@ export default function AdminReports() {
       api.get('/payments/reports/by-property'),
       api.get('/payments/reports/refunds'),
       api.get('/payments/reports/host-payouts'),
-    ]).then(([m, p, r, h]) => {
+      api.get('/payments/reports/occupancy'),
+    ]).then(([m, p, r, h, o]) => {
       if (m.status === 'fulfilled') setMonthly(m.value.data?.data || m.value.data || []);
       if (p.status === 'fulfilled') setByProp(p.value.data?.data || p.value.data || []);
       if (r.status === 'fulfilled') setRefunds(r.value.data?.data || r.value.data || []);
       if (h.status === 'fulfilled') setHosts(h.value.data?.data || h.value.data || []);
+      if (o.status === 'fulfilled') setOccupancyReport(o.value.data?.data || null);
     }).finally(() => setLoading(false));
   };
   useEffect(load, []);
@@ -65,6 +70,14 @@ export default function AdminReports() {
   });
   const pieData = Object.entries(typeMap).map(([name, value]) => ({ name, value }));
   if (pieData.length === 0) pieData.push({ name: 'No data', value: 1 });
+
+  // Real occupancy = booked property_availability slots ÷ all slots hosts have
+  // published as bookable, per month (see reports.controller.js:occupancyReport).
+  let occupancyData = (occupancyReport || []).map(r => ({
+    month: MONTH_NAMES[r.month - 1],
+    rate: r.occupancy_rate,
+  }));
+  if (occupancyData.length === 0) occupancyData = [{ month: 'N/A', rate: 0 }];
 
   const totalRefunded = refunds.reduce((s, r) => s + Number(r.amount || r.refunded || 0), 0);
   const totalRevenue = chartMonthly.reduce((s, m) => s + m.revenue, 0);
@@ -134,6 +147,19 @@ export default function AdminReports() {
                 )}
               </div>
 
+              {/* Revenue by property type */}
+              <div className="card" style={{ marginBottom: 20 }}>
+                <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Revenue by Property Type</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
+                      {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip formatter={v => [`Rs.${Number(v).toLocaleString()}`, 'Revenue']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
               {/* Refunds */}
               <div className="card" style={{ marginBottom: 20 }}>
                 <h3 style={{ fontWeight: 700, marginBottom: 14 }}>Refund Activity</h3>
@@ -161,19 +187,17 @@ export default function AdminReports() {
           )}
 
           {activeTab === 'occupancy' && (
-            <div className="grid-2" style={{ marginBottom: 20 }}>
-              {/* Revenue by type pie */}
-              <div className="card">
-                <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Revenue by Property Type</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
-                      {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={v => [`Rs.${Number(v).toLocaleString()}`, 'Revenue']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+            <div className="card" style={{ marginBottom: 20 }}>
+              <h3 style={{ fontWeight: 700, marginBottom: 16 }}>Occupancy Rate Trends</h3>
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={occupancyData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} />
+                  <Tooltip formatter={v => [`${v}%`, 'Occupancy']} />
+                  <Bar dataKey="rate" fill="#10b981" radius={[2, 2, 0, 0]} barSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
 
