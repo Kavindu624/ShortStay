@@ -194,7 +194,7 @@ export default function AdminSettings() {
           </div>
           
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">Minimum Commission Amount ($)</label>
+            <label className="form-label">Minimum Commission Amount (Rs.)</label>
             <input type="number" name="minCommission" className="form-input" value={settings.minCommission} onChange={handleChange} />
           </div>
         </div>

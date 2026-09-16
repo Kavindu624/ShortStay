@@ -1,9 +1,10 @@
 const { Booking, Property, User, PropertyAvailability, Notification } = require('../models/index');
 const { Op } = require('sequelize');
+const sequelize = require('../config/db');
 const { getPlatformSettings } = require('../utils/settings');
 const sendEmail = require('../utils/sendEmail');
 const updateMembership = require('../utils/membership');
-const { markAsBooked, markAsAvailable } = require('./availability.controller');
+const { markAsAvailable } = require('./availability.controller');
 const logActivity = require('../utils/activityLogger');
 const {
   bookingConfirmationEmail,
@@ -103,53 +104,73 @@ exports.makeBooking = async (req, res) => {
       return res.status(400).json({ message: `Cannot book more than ${settings.maxAdvanceBooking} days in advance` });
     }
 
-    // 3. Check availability BEFORE creating booking
+    // 3-5. Atomically claim the dates and create the booking. Two concurrent
+    // requests for the same property/dates must not both succeed — a plain
+    // "SELECT to check, then UPDATE" (the old approach) has a race window
+    // between those two steps where both requests can see the dates as free.
+    // Instead, the UPDATE itself is the check: it only flips rows that are
+    // *currently* is_booked:false, and MySQL/InnoDB row locks make a second,
+    // concurrent UPDATE for the same rows wait until the first transaction
+    // commits — at which point it will correctly see 0 matching rows left to
+    // claim, because the winner already flipped them to true.
     const requiredDates = getDateRange(checkin_date, checkout_date);
-    const availableDates = await PropertyAvailability.findAll({
-      where: {
-        property_id,
-        available_date: { [Op.in]: requiredDates },
-        is_booked: false,
-      },
-    });
-    if (availableDates.length !== requiredDates.length) {
-      return res.status(409).json({
-        message: 'Property is not available for the selected dates',
-        required_dates: requiredDates.length,
-        available_dates: availableDates.length,
-      });
-    }
-
-    // 4. Prevent double booking — check for overlapping PENDING/CONFIRMED bookings
-    const overlap = await Booking.findOne({
-      where: {
-        property_id,
-        status: { [Op.in]: ['pending', 'confirmed'] },
-        checkin_date:  { [Op.lt]: checkout_date },
-        checkout_date: { [Op.gt]: checkin_date },
-      },
-    });
-    if (overlap) {
-      return res.status(409).json({
-        message: 'This property already has an active booking overlapping your selected dates',
-      });
-    }
-
-    // 5. Mark dates as booked and create booking with 24-hour expiry window
-    await markAsBooked(property_id, checkin_date, checkout_date);
-
     const total_price = nights * property.price_per_night;
-    const expires_at  = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24 h
+    const expires_at   = new Date(Date.now() + 24 * 60 * 60 * 1000); // +24 h
 
-    const booking = await Booking.create({
-      guest_id: req.user.user_id,
-      property_id,
-      checkin_date,
-      checkout_date,
-      total_price,
-      status: 'pending',
-      expires_at,
-    });
+    let booking;
+    try {
+      booking = await sequelize.transaction(async (t) => {
+        const [claimedCount] = await PropertyAvailability.update(
+          { is_booked: true },
+          {
+            where: {
+              property_id,
+              available_date: { [Op.in]: requiredDates },
+              is_booked: false,
+            },
+            transaction: t,
+          }
+        );
+
+        if (claimedCount !== requiredDates.length) {
+          const conflict = new Error('Property is not available for the selected dates');
+          conflict.statusCode = 409;
+          throw conflict;
+        }
+
+        // Defense in depth — should be unreachable given the atomic claim
+        // above, but keeps this check aligned with the availability table.
+        const overlap = await Booking.findOne({
+          where: {
+            property_id,
+            status: { [Op.in]: ['pending', 'approved', 'confirmed'] },
+            checkin_date:  { [Op.lt]: checkout_date },
+            checkout_date: { [Op.gt]: checkin_date },
+          },
+          transaction: t,
+        });
+        if (overlap) {
+          const conflict = new Error('This property already has an active booking overlapping your selected dates');
+          conflict.statusCode = 409;
+          throw conflict;
+        }
+
+        return Booking.create({
+          guest_id: req.user.user_id,
+          property_id,
+          checkin_date,
+          checkout_date,
+          total_price,
+          status: 'pending',
+          expires_at,
+        }, { transaction: t });
+      });
+    } catch (err) {
+      if (err.statusCode === 409) {
+        return res.status(409).json({ message: err.message });
+      }
+      throw err;
+    }
 
     // 6. Send guest booking-created email (booking is still 'pending' at this
     // point — the host hasn't approved it yet, so avoid the word
