@@ -50,6 +50,11 @@ router.get('/google',
  *       ```
  *       {FRONTEND_URL}/login?error=suspended
  *       ```
+ *       **If the matched account isn't email-verified yet** (Google login is only
+ *       allowed for already-verified users):
+ *       ```
+ *       {FRONTEND_URL}/login?error=not_verified
+ *       ```
  *     parameters:
  *       - in: query
  *         name: code
@@ -72,6 +77,15 @@ router.get('/google/callback',
       if (user.is_suspended) {
         return res.redirect(
           `${process.env.FRONTEND_URL}/login?error=suspended`
+        );
+      }
+
+      // Google login is only allowed for already-verified users — an
+      // unverified account (found by matching email, not yet linked to
+      // this Google ID) must complete normal email verification first.
+      if (!user.is_verified) {
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/login?error=not_verified`
         );
       }
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { showAlert } from '../../utils/alert';
-import { Star, ThumbsUp } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 export default function HostReviews() {
   const [, setProperties] = useState([]);
@@ -55,15 +55,6 @@ export default function HostReviews() {
     const parts = name.trim().split(' ');
     if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
     return parts[0].substring(0, 2).toUpperCase();
-  };
-
-  const handleHelpful = async (reviewId) => {
-    try {
-      await api.post(`/reviews/${reviewId}/helpful`);
-      setReviews(reviews.map(r => r.review_id === reviewId ? { ...r, helpful_count: (r.helpful_count || 0) + 1 } : r));
-    } catch (err) {
-      console.error(err);
-    }
   };
 
   const submitReply = async (reviewId) => {
@@ -148,10 +139,6 @@ export default function HostReviews() {
                             <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-main)' }}>{guestName}</div>
                             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>{r._property_title}</div>
                             <p style={{ fontSize: 14, color: 'var(--text-main)', lineHeight: 1.5, margin: '0 0 12px 0' }}>{r.comment}</p>
-                            <button onClick={() => handleHelpful(r.review_id)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#1e3a8a', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
-                              <ThumbsUp size={14} /> Helpful {r.helpful_count > 0 ? `(${r.helpful_count})` : ''}
-                            </button>
-                            
                             <div style={{ marginTop: 12 }}>
                               {r.host_response ? (
                                 <div style={{ background: '#f0f7ff', borderRadius: 8, padding: '12px 16px', marginTop: 12 }}>

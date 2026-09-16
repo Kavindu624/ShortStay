@@ -1,10 +1,13 @@
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const crypto   = require('crypto');
+const { Op }   = require('sequelize');
 const sequelize = require('../config/db');
 const { User } = require('../models/index');
 const logActivity = require('../utils/activityLogger');
 const notify   = require('../utils/notify');
+const updateMembership = require('../utils/membership');
+const { MEMBERSHIP_THRESHOLDS, levelForCompletedCount, countCompletedBookings } = updateMembership;
 
 const sendEmail = require('../utils/sendEmail');
 const {
@@ -720,6 +723,37 @@ exports.createStaff = async (req, res) => {
       emailVerificationTemplate(name, verificationUrl)
     );
 
+    // Extra visibility for the elevated-privilege case: an admin creating
+    // another admin. Logged under its own action name (rather than
+    // blending into generic staff creation) and surfaced to every other
+    // admin, so it can never happen silently.
+    if (role === 'admin') {
+      const creator = await User.findByPk(req.user.user_id, { attributes: ['name'] });
+
+      await logActivity({
+        user_id:   req.user.user_id,
+        action:    'ADMIN_CREATED',
+        entity:    'user',
+        entity_id: result.user_id,
+        req,
+        details:   { new_admin_name: name, new_admin_email: email },
+      });
+
+      const otherAdmins = await User.findAll({
+        where: { role: 'admin', user_id: { [Op.notIn]: [req.user.user_id, result.user_id] } },
+        attributes: ['user_id'],
+      });
+      for (const admin of otherAdmins) {
+        await notify(
+          admin.user_id,
+          'New Admin Account Created',
+          `${creator?.name || 'An admin'} created a new admin account for ${name} (${email}).`,
+          'admin_created',
+          result.user_id
+        );
+      }
+    }
+
     res.status(201).json({
       message: 'Staff created! An email has been sent to them for verification.',
       user: {
@@ -740,30 +774,20 @@ exports.createStaff = async (req, res) => {
 // ─────────────────────────────────────────
 exports.getMembership = async (req, res) => {
   try {
-    const { Booking, User } = require('../models/index');
-    const { Op } = require('sequelize');
+    const { User } = require('../models/index');
 
     const user = await User.findByPk(req.user.user_id, {
       attributes: ['user_id', 'name', 'email', 'membership_level']
     });
 
-    const totalBookings = await Booking.count({
-      where: { guest_id: req.user.user_id, status: { [Op.in]: ['confirmed', 'completed'] } }
-    });
+    const completedBookings = await countCompletedBookings(req.user.user_id);
 
-    // Auto-upgrade logic
-    let currentLevel = user.membership_level || 'basic';
-    const thresholds = { silver: 5, gold: 10, platinum: 15 };
-
-    if (totalBookings >= thresholds.platinum && currentLevel !== 'platinum') {
-      currentLevel = 'platinum';
-      await user.update({ membership_level: 'platinum' });
-    } else if (totalBookings >= thresholds.gold && totalBookings < thresholds.platinum && currentLevel !== 'gold' && currentLevel !== 'platinum') {
-      currentLevel = 'gold';
-      await user.update({ membership_level: 'gold' });
-    } else if (totalBookings >= thresholds.silver && totalBookings < thresholds.gold && currentLevel === 'basic') {
-      currentLevel = 'silver';
-      await user.update({ membership_level: 'silver' });
+    // Single source of truth — same thresholds and same 'completed'-only
+    // counting rule as utils/membership.js, so this can never drift out
+    // of sync with the level that booking completion/cancellation sets.
+    const currentLevel = levelForCompletedCount(completedBookings);
+    if (currentLevel !== user.membership_level) {
+      await user.update({ membership_level: currentLevel });
     }
 
     let nextLevel = null;
@@ -771,13 +795,13 @@ exports.getMembership = async (req, res) => {
 
     if (currentLevel === 'basic') {
       nextLevel = 'silver';
-      bookingsNeeded = thresholds.silver - totalBookings;
+      bookingsNeeded = MEMBERSHIP_THRESHOLDS.silver - completedBookings;
     } else if (currentLevel === 'silver') {
       nextLevel = 'gold';
-      bookingsNeeded = thresholds.gold - totalBookings;
+      bookingsNeeded = MEMBERSHIP_THRESHOLDS.gold - completedBookings;
     } else if (currentLevel === 'gold') {
       nextLevel = 'platinum';
-      bookingsNeeded = thresholds.platinum - totalBookings;
+      bookingsNeeded = MEMBERSHIP_THRESHOLDS.platinum - completedBookings;
     } else {
       nextLevel = 'You are at the highest level!';
       bookingsNeeded = 0;
@@ -788,7 +812,7 @@ exports.getMembership = async (req, res) => {
       name:             user.name,
       email:            user.email,
       membership_level: currentLevel,
-      total_bookings:   totalBookings,
+      total_bookings:   completedBookings,
       next_level:       nextLevel,
       bookings_needed:  bookingsNeeded > 0 ? bookingsNeeded : 0,
     });

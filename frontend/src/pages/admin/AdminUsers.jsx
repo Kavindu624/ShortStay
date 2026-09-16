@@ -80,7 +80,13 @@ export default function AdminUsers() {
               <select className="form-input" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
                 <option value="verifier">Verifier</option>
                 <option value="accountant">Accountant</option>
+                <option value="admin">Admin</option>
               </select>
+              {form.role === 'admin' && (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+                  Every other admin will be notified when this account is created.
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn-primary" type="submit">Create</button>

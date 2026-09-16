@@ -28,7 +28,7 @@ exports.bookingConfirmationEmail = (guestName, property, booking) => `
         <p><strong>Address:</strong> ${property.address}</p>
         <p><strong>Check In:</strong> ${booking.checkin_date}</p>
         <p><strong>Check Out:</strong> ${booking.checkout_date}</p>
-        <p><strong>Total Price:</strong> $${booking.total_price}</p>
+        <p><strong>Total Price:</strong> Rs. ${booking.total_price}</p>
         <p><strong>Status:</strong> ${booking.status}</p>
       </div>
       <p style="margin-top: 20px; color: #666;">Thank you for choosing ShortStay!</p>
@@ -54,7 +54,7 @@ exports.bookingApprovedEmail = (guestName, property, booking) => `
         <p><strong>Address:</strong> ${property.address}</p>
         <p><strong>Check In:</strong> ${booking.checkin_date}</p>
         <p><strong>Check Out:</strong> ${booking.checkout_date}</p>
-        <p><strong>Total Price:</strong> $${booking.total_price}</p>
+        <p><strong>Total Price:</strong> Rs. ${booking.total_price}</p>
       </div>
       <p style="margin-top: 20px; color: #666;">Thank you for choosing ShortStay!</p>
     </div>
@@ -99,7 +99,7 @@ exports.paymentSuccessEmail = (guestName, payment, booking) => `
       <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
         <h4 style="color: #27ae60;">Payment Receipt</h4>
         <p><strong>Payment ID:</strong> ${payment.payment_id}</p>
-        <p><strong>Amount:</strong> $${payment.amount}</p>
+        <p><strong>Amount:</strong> Rs. ${payment.amount}</p>
         <p><strong>Date:</strong> ${payment.payment_date}</p>
         <p><strong>Booking ID:</strong> ${booking.booking_id}</p>
       </div>
@@ -212,7 +212,7 @@ exports.hostNewBookingEmail = (hostName, guestName, property, booking) => `
         <p><strong>Guest:</strong> ${guestName}</p>
         <p><strong>Check In:</strong> ${booking.checkin_date}</p>
         <p><strong>Check Out:</strong> ${booking.checkout_date}</p>
-        <p><strong>Total Price:</strong> $${booking.total_price}</p>
+        <p><strong>Total Price:</strong> Rs. ${booking.total_price}</p>
         <p><strong>Booking ID:</strong> #${booking.booking_id}</p>
       </div>
       <p style="margin-top: 20px; color: #e74c3c; font-weight: bold;">
@@ -241,7 +241,7 @@ exports.bookingRejectedEmail = (guestName, property, booking, reason) => `
         <p><strong>Property:</strong> ${property.title}</p>
         <p><strong>Check In:</strong> ${booking.checkin_date}</p>
         <p><strong>Check Out:</strong> ${booking.checkout_date}</p>
-        <p><strong>Total Price:</strong> $${booking.total_price}</p>
+        <p><strong>Total Price:</strong> Rs. ${booking.total_price}</p>
         ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ''}
       </div>
       <p style="margin-top: 20px; color: #666;">No charges have been made. You can browse other available properties on ShortStay.</p>

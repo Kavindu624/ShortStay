@@ -262,9 +262,6 @@ exports.approveBooking = async (req, res) => {
 
     await booking.update({ status: 'approved' });
 
-    // Update guest membership
-    const newMembership = await updateMembership(booking.guest_id);
-
     // Send approval email to guest
     const guest = await User.findByPk(booking.guest_id);
     await sendEmail(
@@ -285,7 +282,6 @@ exports.approveBooking = async (req, res) => {
     res.status(200).json({
       message: 'Booking approved',
       booking,
-      guest_membership: newMembership,
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -364,6 +360,9 @@ exports.completeBooking = async (req, res) => {
     }
 
     await booking.update({ status: 'completed' });
+
+    // Update guest membership — this is the only place a booking becomes 'completed'
+    await updateMembership(booking.guest_id);
 
     // Free up the dates so they are no longer marked as "Booked" on the calendar
     await markAsAvailable(booking.property_id, booking.checkin_date, booking.checkout_date);

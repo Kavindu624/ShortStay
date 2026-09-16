@@ -74,7 +74,7 @@ exports.processPayment = async (req, res) => {
     const payment = await Payment.create({
       booking_id,
       amount:         finalAmount,
-      currency:       'USD',
+      currency:       'LKR',
       payment_method: 'manual',
       payment_status: 'completed',
       payment_date:   new Date(),
@@ -127,7 +127,7 @@ exports.createPaymentIntent = async (req, res) => {
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountCents,
-      currency: 'usd',
+      currency: 'lkr',
       metadata: {
         booking_id: String(booking_id),
         guest_id:   String(req.user.user_id),
@@ -139,7 +139,7 @@ exports.createPaymentIntent = async (req, res) => {
     const payment = await Payment.create({
       booking_id,
       amount:         finalAmount,
-      currency:       'USD',
+      currency:       'LKR',
       payment_method: 'stripe',
       payment_status: 'pending',
       transaction_id: paymentIntent.id,
@@ -152,7 +152,7 @@ exports.createPaymentIntent = async (req, res) => {
       client_secret: paymentIntent.client_secret,
       payment_id:    payment.payment_id,
       amount:        finalAmount,
-      currency:      'USD',
+      currency:      'LKR',
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -656,7 +656,7 @@ async function _postPaymentSuccess(payment, booking, guestUserId, req) {
           commission_rate: commissionRate,
           commission_amount: commissionAmount,
           payout_amount: payoutAmount,
-          currency: payment.currency || 'USD',
+          currency: payment.currency || 'LKR',
           status: 'pending',
         });
       }
@@ -839,7 +839,7 @@ exports.retryPayment = async (req, res) => {
 
     const intent = await stripe.paymentIntents.create({
       amount:      amountCents,
-      currency:    (payment.currency || 'USD').toLowerCase(),
+      currency:    (payment.currency || 'LKR').toLowerCase(),
       metadata:    { booking_id: String(payment.booking_id), guest_id: String(req.user.user_id) },
       description: `Retry — ShortStay Booking #${payment.booking_id}`,
     });

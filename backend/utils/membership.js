@@ -1,27 +1,25 @@
 const { Booking, User } = require('../models/index');
 
+// Single source of truth for membership tier thresholds (min. completed bookings).
+const MEMBERSHIP_THRESHOLDS = { silver: 5, gold: 10, platinum: 20 };
+
+const levelForCompletedCount = (bookingCount) => {
+  if (bookingCount >= MEMBERSHIP_THRESHOLDS.platinum) return 'platinum';
+  if (bookingCount >= MEMBERSHIP_THRESHOLDS.gold) return 'gold';
+  if (bookingCount >= MEMBERSHIP_THRESHOLDS.silver) return 'silver';
+  return 'basic';
+};
+
+// Count total completed bookings (stays actually finished) for this guest
+const countCompletedBookings = (guest_id) => Booking.count({
+  where: { guest_id, status: 'completed' }
+});
+
 const updateMembership = async (guest_id) => {
   try {
-    // Count total confirmed bookings for this guest
-    const bookingCount = await Booking.count({
-      where: { 
-        guest_id,
-        status: 'confirmed'
-      }
-    });
+    const bookingCount = await countCompletedBookings(guest_id);
+    const membership_level = levelForCompletedCount(bookingCount);
 
-    // Determine membership level
-    let membership_level = 'basic';
-
-    if (bookingCount >= 10) {
-      membership_level = 'gold';
-    } else if (bookingCount >= 5) {
-      membership_level = 'silver';
-    } else {
-      membership_level = 'basic';
-    }
-
-    // Update user membership
     await User.update(
       { membership_level },
       { where: { user_id: guest_id } }
@@ -36,3 +34,6 @@ const updateMembership = async (guest_id) => {
 };
 
 module.exports = updateMembership;
+module.exports.MEMBERSHIP_THRESHOLDS = MEMBERSHIP_THRESHOLDS;
+module.exports.levelForCompletedCount = levelForCompletedCount;
+module.exports.countCompletedBookings = countCompletedBookings;
