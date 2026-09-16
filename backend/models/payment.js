@@ -17,7 +17,7 @@ const Payment = sequelize.define('payment', {
   },
   currency: {
     type: DataTypes.STRING(10),
-    defaultValue: 'USD',
+    defaultValue: 'LKR',
   },
   payment_method: {
     type: DataTypes.ENUM('stripe', 'manual'),

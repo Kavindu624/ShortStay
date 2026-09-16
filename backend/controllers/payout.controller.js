@@ -33,7 +33,7 @@ exports.generatePayout = async (req, res) => {
   try {
     const { booking_id } = req.params;
     const settings = await getPlatformSettings();
-    let commissionRate  = parseFloat(req.body.commission_rate || settings.commissionRate);
+    const commissionRate = parseFloat(req.body.commission_rate || settings.commissionRate);
 
     // Find completed payment for this booking
     const payment = await Payment.findOne({
@@ -51,24 +51,10 @@ exports.generatePayout = async (req, res) => {
 
     const booking = await Booking.findByPk(booking_id, {
       include: [
-        { 
-          model: Property, 
-          as: 'property', 
-          attributes: ['title', 'host_id'],
-          include: [{ model: User, as: 'host', attributes: ['membership_level'] }]
-        }
+        { model: Property, as: 'property', attributes: ['title', 'host_id'] }
       ],
     });
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
-
-    // Apply membership discount to commission rate
-    const hostLevel = booking.property?.host?.membership_level || 'basic';
-    let discount = 0;
-    if (hostLevel === 'silver') discount = 1;
-    else if (hostLevel === 'gold') discount = 2;
-    else if (hostLevel === 'platinum') discount = 3;
-
-    commissionRate = Math.max(0, commissionRate - discount);
 
     const grossAmount      = parseFloat(payment.amount);
     let commissionAmount = parseFloat((grossAmount * commissionRate / 100).toFixed(2));
@@ -89,7 +75,7 @@ exports.generatePayout = async (req, res) => {
       commission_rate:  commissionRate,
       commission_amount: commissionAmount,
       payout_amount:    payoutAmount,
-      currency:         payment.currency || 'USD',
+      currency:         payment.currency || 'LKR',
       status:           'pending',
     });
 

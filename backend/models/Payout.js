@@ -49,7 +49,7 @@ const Payout = sequelize.define('payout', {
   },
   currency: {
     type: DataTypes.STRING(10),
-    defaultValue: 'USD',
+    defaultValue: 'LKR',
   },
   status: {
     type: DataTypes.ENUM('pending', 'processing', 'completed', 'failed'),

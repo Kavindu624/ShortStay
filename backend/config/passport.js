@@ -26,32 +26,18 @@ passport.use(new GoogleStrategy({
       user = await User.findOne({ where: { email } });
 
       if (user) {
-        if (!user.is_verified) {
-          // This account was never email-verified — we cannot assume whoever
-          // originally registered this address is the same person completing
-          // Google sign-in right now. (An attacker can pre-register any email
-          // with a password of their choosing and simply never verify it,
-          // hoping the real owner later links it via Google and inherits a
-          // "verified" account the attacker's password still opens.)
-          //
-          // Google HAS just proven that the person in front of us controls
-          // this mailbox, so we honor that: link the account and mark it
-          // verified. But we must not let a password nobody has proven
-          // ownership of keep working — so it's cleared, forcing anyone who
-          // wants password login to go through "forgot password" (which
-          // itself requires access to this same, now Google-confirmed inbox).
-          // Any existing session token for this account is invalidated too.
-          await user.update({
-            google_id: googleId,
-            is_verified: true,
-            password: null,
-            tokens_valid_after: new Date(),
-          });
-        } else {
+        if (user.is_verified) {
           // Already-verified account (owner proved email control at
-          // registration time) — safe to just add Google as a login method.
+          // registration time) — safe to add Google as a login method.
           await user.update({ google_id: googleId });
         }
+        // If not yet verified, deliberately do NOT link or verify here —
+        // Google login is only allowed for already-verified users. An
+        // unverified account must complete the normal email verification
+        // flow first; we leave it completely untouched (no google_id,
+        // no is_verified change) and let the route handler reject the
+        // sign-in with a clear reason, the same way it already does for
+        // suspended accounts.
         return done(null, user);
       }
 
