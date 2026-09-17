@@ -150,8 +150,8 @@ export default function PMPayouts() {
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600 }}>{h.totalEarnings} LKR</td>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#f59e0b' }}>{h.pendingAmount} LKR</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 600 }}>{h.totalEarnings.toLocaleString()} LKR</td>
+                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#f59e0b' }}>{h.pendingAmount.toLocaleString()} LKR</td>
                   <td style={{ padding: '12px 16px', fontWeight: 500 }}>{h.propertiesCount}</td>
                   <td style={{ padding: '12px 16px' }}>
                     {h.bankStatus === 'verified' ? (

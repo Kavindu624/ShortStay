@@ -24,17 +24,19 @@ ShortStay is designed to simplify the process of finding, booking, and managing 
 
 ### Core Features
 
-- User Registration & Authentication
-- Role-Based Access Control
-- Property Listing Management
+- User Registration & Authentication (email/password and Google OAuth)
+- Role-Based Access Control (5 roles)
+- Property Listing Management with multi-image upload
 - Advanced Search & Filtering
-- Booking Management
-- Online Payment Processing
-- Review & Rating System
-- Property Verification Process
-- Notification System
-- Administrative Dashboard
-- Reporting & Analytics
+- Booking Management with automatic 24-hour host-response expiry
+- Concurrency-safe booking (prevents two guests double-booking the same dates)
+- Online Payment Processing via Stripe
+- Guest Membership Tiers with automatic payment discounts
+- Review & Rating System (with host responses)
+- Property Verification Process (field inspection workflow)
+- In-App & Email Notification System
+- Administrative Dashboard with reporting & analytics
+- Host Earnings & Payout Management
 
 ---
 
@@ -49,14 +51,15 @@ ShortStay is designed to simplify the process of finding, booking, and managing 
 - Complete online payments
 - Manage booking history
 - Submit reviews and ratings
+- Earn membership tier upgrades (Basic → Silver → Gold → Platinum) based on completed stays, unlocking payment discounts
 
 ### Host
 
 - Create and manage property listings
 - Upload property information and images
-- Manage booking requests
+- Manage booking requests (approve/reject/complete)
 - Update availability calendars
-- View earnings and booking history
+- View earnings and payout history
 - Submit properties for verification
 
 ### Admin
@@ -89,16 +92,18 @@ ShortStay is designed to simplify the process of finding, booking, and managing 
 
 ### Frontend
 
-- React.js
-- HTML5
-- CSS3
-- JavaScript
+- React (Vite)
+- Recharts (dashboards & analytics charts)
+- Axios (API client)
 
 ### Backend
 
 - Node.js
 - Express.js
+- Sequelize ORM
 - JWT Authentication
+- Passport.js (Google OAuth 2.0)
+- Socket.IO (real-time infrastructure — see [Notes on Current Implementation Status](#-notes-on-current-implementation-status))
 
 ### Database
 
@@ -107,13 +112,14 @@ ShortStay is designed to simplify the process of finding, booking, and managing 
 
 ### Third-Party Services
 
-- PayHere / Stripe
-- Google Maps API
-- SendGrid / NodeMailer
+- Stripe (payment processing)
+- Google OAuth 2.0 (social login)
+- Nodemailer (transactional email via SMTP)
 
 ### Development Tools
 
 - Git & GitHub
+- GitHub Actions (CI pipeline — lint, build, and dependency audit run automatically on push/PR)
 - Visual Studio Code
 - Postman
 - Figma
@@ -122,68 +128,63 @@ ShortStay is designed to simplify the process of finding, booking, and managing 
 
 ## 🏗️ System Architecture
 
+The system follows a **3-tier architecture**:
+
 ```text
-Frontend (React.js)
-        │
-        ▼
-Backend API (Node.js + Express.js)
-        │
-        ▼
-MySQL Database
-        │
- ┌──────┼────────┐
- ▼      ▼        ▼
-Payments Email  Maps
-Gateway  API    API
+Presentation Tier          Application/Logic Tier         Data Tier
+(React + Vite)      ──▶    (Node.js + Express API)  ──▶   (MySQL via Sequelize ORM)
+                                    │
+                     ┌──────────────┼───────────────┐
+                     ▼              ▼                ▼
+                  Stripe        Nodemailer      Google OAuth
+                (Payments)       (Email)           (Login)
 ```
+
+Within the Application/Logic tier, requests flow through **routes** (URL → handler mapping) → **middleware** (authentication, role checks, validation) → **controllers** (business logic) → **models** (Sequelize definitions of the MySQL schema).
 
 ---
 
 ## 📂 Project Modules
 
 ### User Management
-
-- Registration
-- Login & Authentication
+- Registration, Login & Authentication (local + Google OAuth)
 - Profile Management
 - Role Management
 
 ### Property Management
-
-- Property Listings
-- Image Uploads
-- Availability Management
-- Property Verification
+- Property Listings & Image Uploads
+- Availability Management (per-date calendar)
+- Property Verification (inspector workflow)
 
 ### Booking Management
-
 - Search & Filtering
-- Reservation System
-- Booking Confirmation
-- Booking History
+- Reservation System (transactional, concurrency-safe date claiming)
+- Automatic Booking Expiry (24h host response window, checked every 15 minutes)
+- Booking Confirmation & History
 
 ### Payment Management
-
-- Online Payments
+- Online Payments via Stripe
+- Membership-tier discounts (0–3% based on guest tier)
 - Refund Processing
-- Transaction Tracking
-- Financial Reporting
+- Transaction Tracking & Financial Reporting
 
 ### Review System
-
-- Ratings
-- Reviews
-- User Feedback
+- Ratings & Reviews
+- Host Responses to Reviews
 
 ---
 
 ## 🔒 Security Features
 
-- JWT-based Authentication
-- Role-Based Access Control (RBAC)
-- Secure HTTPS Communication
-- Protected API Endpoints
-- Data Validation & Sanitization
+- JWT-based Authentication, with server-side token invalidation on logout/password change
+- Password hashing with bcrypt
+- Role-Based Access Control (RBAC) via route-level middleware
+- Rate limiting on authentication endpoints
+- CORS restricted to configured frontend origins and local network IPs (for mobile testing)
+- File upload validation (extension + MIME type checks)
+- Input validation & sanitization (including CSV export sanitization and HTML-escaping in email templates)
+
+> This project underwent an internal security review during development; several vulnerability classes (OAuth account-hijacking, IDOR, path traversal, injection) were identified and patched. As with any academic project, this should not be treated as production-hardened without a fresh, independent review before any real deployment.
 
 ---
 
@@ -202,6 +203,12 @@ The project follows multiple testing approaches:
 - Postman
 - Browser Developer Tools
 - Manual Testing
+
+### Continuous Integration
+
+A GitHub Actions workflow runs automatically on every push and pull request:
+- **Backend:** syntax-checks every `.js` file and runs `npm audit`
+- **Frontend:** runs ESLint, builds the production bundle, and runs `npm audit`
 
 ---
 
@@ -230,11 +237,11 @@ Extract the provided `shortstay.zip` file to your desired directory and open the
 
 ### 4. Configure Environment Variables
 
-Since the `.env` files are already provided, ensure they are placed correctly:
-- The backend configuration file should be at `backend/.env`
-- The frontend configuration file should be at `frontend/.env`
+Copy `.env.example` (if provided) to `.env` in both `backend/` and `frontend/`, then fill in your own values:
+- `backend/.env` needs your local MySQL credentials, a `JWT_SECRET`, Stripe test keys, Google OAuth credentials (if testing social login), and SMTP credentials for outgoing email.
+- `frontend/.env` needs the backend API URL.
 
-*(Note: Ensure your local MySQL password matches the `DB_PASS` value in the `backend/.env` file. If your local MySQL password is different, update the `DB_PASS` value to match yours.)*
+`.env` files are gitignored and **must never be committed** — they hold real secrets, not placeholder values.
 
 ### 5. Install Dependencies
 
@@ -290,11 +297,12 @@ Open your web browser and go to `http://localhost:5173`. You can now use the Sho
 ## 📸 UI Screens
 
 - Home Page
-- Login & Registration
+- Login & Registration (including Google OAuth)
 - Search & Filtering
 - Property Details
 - Guest Dashboard
 - Host Dashboard
+- Admin / Accountant / Verifier Dashboards
 - Booking Management
 
 ---
@@ -304,10 +312,19 @@ Open your web browser and go to `http://localhost:5173`. You can now use the Sho
 - Real-time messaging between guests and hosts
 - AI-powered property recommendations
 - Mobile application (Android & iOS)
-- Advanced analytics dashboard
 - Multi-language support
 - Enhanced fraud detection
 - Cloud deployment and scaling
+- Google Maps-based location search (the backend has an integration point ready for geocoded coordinates; the frontend does not yet call a geocoding API)
+
+---
+
+## 📝 Notes on Current Implementation Status
+
+For transparency, a couple of pieces of infrastructure exist in the codebase but aren't fully wired end-to-end yet:
+
+- **Real-time notification delivery:** the backend has a working Socket.IO server (`backend/utils/websocket.js`) that emits an event the instant a notification is created. The frontend does not yet open a WebSocket connection to receive it, so in-app notifications currently update via a regular page-load fetch rather than an instant push. The email notification for the same events is fully live.
+- **Location search:** the backend's property search accepts geocoded `location_lat`/`location_lng` parameters (intended to come from the Google Maps Geocoding API), but the frontend does not yet call that API — location search currently works by text/address matching instead.
 
 ---
 
@@ -327,135 +344,8 @@ Open your web browser and go to `http://localhost:5173`. You can now use the Sho
 
 ## 📚 Academic Project
 
-**Course:** CIS3012 – Group Project  
-**Faculty:** Faculty of Computing  
-**University:** University of Sri Jayewardenepura
-
----
-
-## 📂 Project Modules
-
-### User Management
-
-- Registration
-- Login & Authentication
-- Profile Management
-- Role Management
-
-### Property Management
-
-- Property Listings
-- Image Uploads
-- Availability Management
-- Property Verification
-
-### Booking Management
-
-- Search & Filtering
-- Reservation System
-- Booking Confirmation
-- Booking History
-
-### Payment Management
-
-- Online Payments
-- Refund Processing
-- Transaction Tracking
-- Financial Reporting
-
-### Review System
-
-- Ratings
-- Reviews
-- User Feedback
-
----
-
-## 🔒 Security Features
-
-- JWT-based Authentication
-- Role-Based Access Control (RBAC)
-- Secure HTTPS Communication
-- Protected API Endpoints
-- Data Validation & Sanitization
-
----
-
-## 🧪 Testing Strategy
-
-The project follows multiple testing approaches:
-
-- Unit Testing
-- Integration Testing
-- System Testing
-- User Acceptance Testing (UAT)
-- Performance Testing
-
-### Testing Tools
-
-- Postman
-- Browser Developer Tools
-- Manual Testing
-
----
-
-
-
----
-
-## 📊 Non-Functional Requirements
-
-- Supports 100+ concurrent users
-- 99.5% uptime target
-- Cross-browser compatibility
-- Responsive design
-- Maintainable and scalable architecture
-- GDPR-compliant data handling
-
----
-
-## 📸 UI Screens
-
-- Home Page
-- Login & Registration
-- Search & Filtering
-- Property Details
-- Guest Dashboard
-- Host Dashboard
-- Booking Management
-
----
-
-## 📈 Future Enhancements
-
-- Real-time messaging between guests and hosts
-- AI-powered property recommendations
-- Mobile application (Android & iOS)
-- Advanced analytics dashboard
-- Multi-language support
-- Enhanced fraud detection
-- Cloud deployment and scaling
-
----
-
-## 🤝 Contributors
-
-| Role | Responsibility |
-|--------|---------------|
-| Project Manager | Project Planning & Coordination |
-| System Analyst | Requirement Analysis |
-| System Designer | System Architecture & UI Design |
-| Database Administrator | Database Design |
-| Frontend Developer | User Interface Development |
-| Backend Developer | API & Business Logic Development |
-| QA Tester | Testing & Quality Assurance |
-
----
-
-## 📚 Academic Project
-
-**Course:** CIS3012 – Group Project  
-**Faculty:** Faculty of Computing  
+**Course:** CIS3012 – Group Project
+**Faculty:** Faculty of Computing
 **University:** University of Sri Jayewardenepura
 
 ---
@@ -468,16 +358,19 @@ This project is developed for educational and academic purposes.
 
 ## 📖 Detailed User Manual & Test Credentials
 
-This section provides comprehensive, step-by-step instructions for operating the ShortStay system across all user roles. 
+This section provides comprehensive, step-by-step instructions for operating the ShortStay system across all user roles.
 
 ### System Access & Test Credentials
 
-You can access the system at `http://localhost:5173`. 
-The following test accounts have been pre-configured for staff roles. *(All test accounts use the password: **password123**)*
+You can access the system at `http://localhost:5173`.
+
+Pre-configured staff accounts exist for each internal role:
 
 *   **Admin Dashboard:** `admin@shortstay.com`
 *   **Accountant (Payment Manager):** `pm@shortstay.com`
 *   **Verifier (Field Inspector):** `inspector@shortstay.com`
+
+Passwords for these accounts are set locally in your own database and are not fixed/shared here — check with whoever manages your local `shortstay` MySQL instance, or use the "Forgot Password" flow to reset one.
 
 ---
 
@@ -485,28 +378,28 @@ The following test accounts have been pre-configured for staff roles. *(All test
 Guests use the platform to search, book, and review short-term accommodations.
 
 **1.1 Account Registration & Login**
-*   **Registration:** Click the "Sign Up" button on the top right. Fill in your name, email, phone number, and password. Select "Guest" as your role.
-*   **Login:** Click "Login" and enter your credentials. You will be redirected to the Guest dashboard.
+*   **Registration:** Click the "Sign Up" button on the top right. Fill in your name, email, phone number, and password, or use "Sign in with Google". Select "Guest" as your role.
+*   **Login:** Click "Login" and enter your credentials, or continue with Google. You will be redirected to the Guest dashboard.
 
 **1.2 Searching & Filtering Properties**
 *   Navigate to the **"Browse Listings"** tab.
 *   Use the search bar to look for specific cities or property names.
-*   Click **"More Filters"** to filter by Price Range, Amenities (e.g., Free WiFi, Pool), Bedrooms, and Property Type (Villa, Apartment, etc.).
-*   Click on any property card to view high-resolution images, full descriptions, and host details.
+*   Click **"More Filters"** to filter by Price Range, Availability, Rating, and Property Type (Villa, Apartment, etc.).
+*   Click on any property card to view images, full descriptions, and host details.
 
 **1.3 Booking an Accommodation**
 *   On the Property Details page, select your desired **Check-in** and **Check-out** dates from the calendar.
 *   The system will automatically calculate the total price based on the number of nights. It will prevent you from selecting dates that are already booked.
-*   Click **"Book Now"** to reserve the dates.
+*   Click **"Book Now"** to reserve the dates. The host has 24 hours to approve or reject the request before it automatically expires.
 
 **1.4 Making a Secure Payment**
-*   After booking, navigate to the **"Wallet / Payments"** tab or follow the prompt to pay.
+*   Once a host approves your booking, navigate to **"My Bookings"** and click **"Pay Now"**.
 *   Enter your credit card details into the secure Stripe checkout form. (For testing, use standard Stripe test cards like `4242 4242 4242 4242`).
-*   Upon success, your booking status will change to "Confirmed".
+*   Upon success, your booking status will change to "Confirmed". Guests with a Silver/Gold/Platinum membership tier automatically receive a discount on this payment.
 
 **1.5 Managing Bookings & Reviews**
-*   Go to **"My Bookings"** to view upcoming and past trips. You can cancel pending bookings here.
-*   After a stay is completed, go to the **"Reviews"** tab to leave a 1-5 star rating and a written review for the property.
+*   Go to **"My Bookings"** to view upcoming and past trips. You can cancel pending/approved/confirmed bookings here (refund amount depends on how close to check-in you cancel).
+*   After a stay is completed, go to the **"My Reviews"** tab to leave a 1-5 star rating and a written review for the property.
 
 ---
 
@@ -516,21 +409,21 @@ Hosts list their properties, manage availability, and earn revenue.
 **2.1 Creating a Property Listing**
 *   Log in as a Host and navigate to **"My Listings"**.
 *   Click **"Add Property"**. Fill out the title, description, location, and price per night.
-*   Upload up to 5 images showcasing the property.
-*   Submit the property. It will initially be in an "Unverified" or "Pending" state until approved by a Verifier and Admin.
+*   Upload images showcasing the property.
+*   Submit the property. It will initially be in a "Pending Approval" state until approved by an Admin, and "Unverified" until a Verifier inspects it.
 
 **2.2 Managing Availability**
 *   Navigate to the **"Availability"** or Calendar tab.
 *   Select your property from the dropdown.
-*   You can manually block out dates (e.g., for maintenance or personal use) by clicking on the calendar days.
+*   You can manually mark dates as available or blocked by clicking on the calendar days.
 
 **2.3 Property Verification**
 *   To get the "Verified" badge (which increases guest trust), click the **"Request Verification"** button on your listing.
-*   This alerts the Field Inspector to review your property.
+*   This adds your property to the Field Inspector's verification queue.
 
 **2.4 Managing Bookings & Earnings**
-*   **Bookings:** View all incoming guest requests. You can see guest details and booking statuses (Pending, Confirmed, Cancelled).
-*   **Earnings Dashboard:** Track your financial performance. The dashboard displays Gross Earnings, the Platform Commission deducted, and your Net Payouts, complete with visual charts.
+*   **Bookings:** View all incoming guest requests. You can approve, reject, or mark a booking complete after checkout.
+*   **Earnings:** Track your financial performance — Gross Earnings, the Platform Commission deducted, and your Net Payouts, with visual charts.
 
 ---
 
@@ -538,17 +431,16 @@ Hosts list their properties, manage availability, and earn revenue.
 Admins ensure the smooth and secure operation of the entire marketplace.
 
 **3.1 User Management**
-*   Log in as Admin (`admin@shortstay.com`). Navigate to **"User Management"**.
-*   View all registered users. You can temporarily **Suspend** users who violate terms or reactivate them.
+*   Log in as Admin. Navigate to **"Users"**.
+*   View all registered users. You can temporarily **Suspend** users who violate terms, or reactivate them (admins cannot suspend or delete their own account).
 
 **3.2 Property Moderation**
-*   Navigate to **"Property Management"**.
+*   Navigate to **"Properties"**.
 *   Review newly submitted properties. Admins have the final authority to **Approve** or **Reject** listings to maintain platform quality.
-*   Admins can instantly unlist properties if severe issues arise.
 
 **3.3 Complaint Handling**
 *   Navigate to **"Complaints"**.
-*   View issues raised by guests or hosts. Update the status of complaints (Open, In Progress, Resolved) and add internal resolution notes.
+*   View issues raised by guests. Update the status of complaints (Open, In Progress, Resolved, Closed) and add internal resolution notes.
 
 ---
 
@@ -556,14 +448,14 @@ Admins ensure the smooth and secure operation of the entire marketplace.
 Accountants monitor the financial health and transaction integrity of the platform.
 
 **4.1 Transaction Monitoring**
-*   Log in as Accountant (`pm@shortstay.com`) and open the **"Payment Dashboard"**.
-*   View a real-time ledger of all guest payments, including Stripe Transaction IDs, amounts, and dates.
+*   Log in as Accountant and open **"Payments"**.
+*   View a ledger of all guest payments, including transaction IDs, amounts, and dates.
 
 **4.2 Revenue Tracking**
-*   The dashboard automatically calculates the Total Platform Gross, Total Commission Earned (based on the fixed platform fee percentage), and Total Paid Out to Hosts.
+*   **"Reports"** shows monthly revenue, real occupancy rates (based on actual booked vs. available property dates), and top-performing hosts.
 
-**4.3 Handling Refunds**
-*   If a guest cancels a booking within the allowable window, the Accountant can track the cancellation and manually initiate or confirm the refund process through the dashboard.
+**4.3 Managing Payouts**
+*   **"Payouts"** lets the accountant generate a payout for a completed, paid booking and mark it as processed once the host has been paid, with commission automatically calculated from the platform's commission rate.
 
 ---
 
@@ -571,11 +463,11 @@ Accountants monitor the financial health and transaction integrity of the platfo
 Verifiers perform physical or virtual inspections to ensure property quality.
 
 **5.1 Inspection Queue**
-*   Log in as Verifier (`inspector@shortstay.com`).
-*   The dashboard displays a queue of all properties that hosts have submitted for verification.
+*   Log in as Verifier.
+*   **"Verification Queue"** displays properties that hosts have requested verification for; the verifier schedules and completes inspections from there.
 
 **5.2 Submitting Inspection Reports**
-*   Click on a pending property to begin the inspection workflow.
-*   Enter an **Overall Score** (0-100) based on cleanliness, accuracy of the listing, and safety.
-*   Provide detailed written **Recommendations** or notes.
-*   Submit the final decision to **Approve** or **Reject** the property. Approved properties receive a public "Verified" badge.
+*   Open a pending property to begin the inspection workflow.
+*   Enter an **Overall Score** based on cleanliness, accuracy of the listing, and safety.
+*   Provide written **Recommendations** or notes, and images from the inspection.
+*   Submit the final decision to **Approve** or **Revoke** the property's verification badge.

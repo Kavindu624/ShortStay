@@ -33,7 +33,9 @@ exports.getPendingProperties = async (req, res) => {
 exports.getInspections = async (req, res) => {
   try {
     const inspections = await Inspection.findAll({
-      where: { inspector_id: req.user.user_id },
+      // Exclude inspections whose property was since deleted (property_id is
+      // nulled by the FK's ON DELETE SET NULL rather than removing the row).
+      where: { inspector_id: req.user.user_id, property_id: { [Op.ne]: null } },
       include: [{ model: Property, attributes: ['title', 'address', 'verification_status'] }],
       order: [['inspection_id', 'DESC']],
     });
@@ -52,6 +54,9 @@ exports.getInspectionHistory = async (req, res) => {
       where: {
         inspector_id: req.user.user_id,
         status: 'completed',
+        // Exclude inspections whose property was since deleted (property_id is
+        // nulled by the FK's ON DELETE SET NULL rather than removing the row).
+        property_id: { [Op.ne]: null },
       },
       include: [{
         model: Property,
@@ -77,25 +82,32 @@ exports.getInspectorDashboard = async (req, res) => {
     const { Op } = require('sequelize');
     const today = new Date().toISOString().split('T')[0];
 
+    // Inspections whose property was since deleted have property_id nulled by
+    // the FK's ON DELETE SET NULL rather than the row being removed — exclude
+    // them so the stat cards don't count dead records.
+    const notOrphaned = { property_id: { [Op.ne]: null } };
+
     const [total, scheduled, completed, approvedToday, rejectedToday] = await Promise.all([
-      Inspection.count({ where: { inspector_id } }),
-      Inspection.count({ where: { inspector_id, status: 'scheduled' } }),
-      Inspection.count({ where: { inspector_id, status: 'completed' } }),
-      
+      Inspection.count({ where: { inspector_id, ...notOrphaned } }),
+      Inspection.count({ where: { inspector_id, status: 'scheduled', ...notOrphaned } }),
+      Inspection.count({ where: { inspector_id, status: 'completed', ...notOrphaned } }),
+
       Inspection.count({
-        where: { 
-          inspector_id, 
-          status: 'completed', 
+        where: {
+          inspector_id,
+          status: 'completed',
           recommendation: 'approve',
-          completed_date: today
+          completed_date: today,
+          ...notOrphaned
         }
       }),
       Inspection.count({
-        where: { 
-          inspector_id, 
-          status: 'completed', 
+        where: {
+          inspector_id,
+          status: 'completed',
           recommendation: { [Op.in]: ['reject', 'revoked'] },
-          completed_date: today
+          completed_date: today,
+          ...notOrphaned
         }
       })
     ]);
@@ -430,6 +442,9 @@ exports.revokeVerificationBadge = async (req, res) => {
 exports.getAllInspections = async (req, res) => {
   try {
     const inspections = await Inspection.findAll({
+      // Exclude inspections whose property was since deleted (property_id is
+      // nulled by the FK's ON DELETE SET NULL rather than removing the row).
+      where: { property_id: { [Op.ne]: null } },
       include: [
         { model: Property, attributes: ['title', 'address', 'verification_status'] },
         { model: User, as: 'inspector', attributes: ['name', 'email'] },

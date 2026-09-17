@@ -139,7 +139,7 @@ export default function AdminHostProfile() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600 }}>
                       <Star size={14} color="#f59e0b" fill="#f59e0b" /> {p.overall_score || 'New'}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>Rs.{p.price_per_night}/night</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>Rs.{Number(p.price_per_night).toLocaleString()}/night</div>
                   </div>
                 </div>
               </div>
