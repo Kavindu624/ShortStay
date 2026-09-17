@@ -368,9 +368,10 @@ exports.occupancyReport = async (req, res) => {
 exports.revenueByPropertyReport = async (req, res) => {
   try {
     const payments = await Payment.findAll({
+      where: { payment_status: 'completed' },
       include: [{
         model: Booking,
-        include: [{ model: Property, as: 'property', attributes: ['title', 'property_id', 'address'] }],
+        include: [{ model: Property, as: 'property', attributes: ['title', 'property_id', 'address', 'property_type'] }],
       }],
     });
 
@@ -380,11 +381,12 @@ exports.revenueByPropertyReport = async (req, res) => {
       const pid = p.booking.property.property_id;
       if (!byProp[pid]) {
         byProp[pid] = {
-          property_id: pid,
-          title:       p.booking.property.title,
-          address:     p.booking.property.address,
-          payments:    0,
-          revenue:     0,
+          property_id:   pid,
+          title:         p.booking.property.title,
+          address:       p.booking.property.address,
+          property_type: p.booking.property.property_type,
+          payments:      0,
+          revenue:       0,
         };
       }
       byProp[pid].payments += 1;

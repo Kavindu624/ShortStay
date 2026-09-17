@@ -77,8 +77,8 @@ export default function PMPayments() {
       guest: booking.guest?.name || 'Unknown',
       host: booking.property?.host?.name || 'Unknown',
       amount: Number(p.amount || 0),
-      commission: p.Payout?.commission_amount ? Number(p.Payout.commission_amount) : Number(p.amount || 0) * 0.1,
-      payout: p.Payout?.payout_amount ? Number(p.Payout.payout_amount) : Number(p.amount || 0) * 0.9,
+      commission: p.payout?.commission_amount ? Number(p.payout.commission_amount) : Number(((p.amount || 0) * 0.1).toFixed(2)),
+      payout: p.payout?.payout_amount ? Number(p.payout.payout_amount) : Number(((p.amount || 0) * 0.9).toFixed(2)),
       method: p.payment_method || 'Credit Card',
       status: p.payment_status || p.status || 'completed',
       date: dateStr || '2026-01-01'
@@ -151,9 +151,9 @@ export default function PMPayments() {
                   <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{p.bookingId}</td>
                   <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{p.guest}</td>
                   <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{p.host}</td>
-                  <td style={{ padding: '12px', fontWeight: 500 }}>{p.amount} LKR</td>
-                  <td style={{ padding: '12px', fontWeight: 600, color: '#10b981' }}>{p.commission} LKR</td>
-                  <td style={{ padding: '12px', fontWeight: 500 }}>{p.payout} LKR</td>
+                  <td style={{ padding: '12px', fontWeight: 500 }}>{p.amount.toLocaleString()} LKR</td>
+                  <td style={{ padding: '12px', fontWeight: 600, color: '#10b981' }}>{p.commission.toLocaleString()} LKR</td>
+                  <td style={{ padding: '12px', fontWeight: 500 }}>{p.payout.toLocaleString()} LKR</td>
                   <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
                     {p.method === 'Bank Transfer' ? (
                       <>Bank<br/>Transfer</>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import api from '../../api';
 import { Download, FileText, TrendingUp } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function PMReports() {
   const [activeTab, setActiveTab] = useState('occupancy');
@@ -146,6 +146,7 @@ export default function PMReports() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} tickFormatter={v => `${(v/1000)}k`} />
+                <Tooltip formatter={v => [`Rs.${Number(v).toLocaleString()}`, 'Revenue']} cursor={{ fill: 'rgba(30,58,138,0.06)' }} />
                 <Bar dataKey="revenue" fill="#1e3a8a" radius={[4, 4, 0, 0]} barSize={50} />
               </BarChart>
             </ResponsiveContainer>
@@ -165,6 +166,7 @@ export default function PMReports() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                   <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} />
+                  <Tooltip formatter={v => [`${v}%`, 'Occupancy']} cursor={{ fill: 'rgba(16,185,129,0.06)' }} />
                   <Bar dataKey="rate" fill="#10b981" radius={[2, 2, 0, 0]} barSize={40} />
                 </BarChart>
               </ResponsiveContainer>
@@ -192,6 +194,7 @@ export default function PMReports() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
+                  <Tooltip formatter={v => [`${v}%`, 'Share']} />
                 </PieChart>
               </ResponsiveContainer>
             </div>

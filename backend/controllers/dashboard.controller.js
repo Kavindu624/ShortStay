@@ -125,16 +125,17 @@ exports.hostDashboard = async (req, res) => {
       Notification.count({ where: { user_id: host_id, is_read: false } }),
     ]);
 
-    const propertyIds   = properties.map(p => p.property_id);
-    const allReviews    = properties.flatMap(p => p.reviews || []);
-    const totalEarnings = payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+    const propertyIds     = properties.map(p => p.property_id);
+    const allReviews      = properties.flatMap(p => p.reviews || []);
+    const completedPayments = payments.filter(p => p.payment_status === 'completed');
+    const totalEarnings   = completedPayments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
     const avgRating     = allReviews.length > 0
       ? parseFloat((allReviews.reduce((s, r) => s + r.rating, 0) / allReviews.length).toFixed(2))
       : null;
 
     // Monthly earnings chart data (last 6 months)
     const monthlyEarnings = {};
-    payments.forEach(p => {
+    completedPayments.forEach(p => {
       if (!p.payment_date) return;
       const key = new Date(p.payment_date).toLocaleString('default', {
         month: 'short', year: 'numeric',
@@ -143,10 +144,12 @@ exports.hostDashboard = async (req, res) => {
         ((monthlyEarnings[key] || 0) + parseFloat(p.amount)).toFixed(2)
       );
     });
+    // Same data as an array — the shape HostDashboard.jsx's chart actually reads
+    const monthlyEarningsArray = Object.entries(monthlyEarnings).map(([month, amount]) => ({ month, amount }));
 
     // Top performing property by earnings
     const earningsByProperty = {};
-    payments.forEach(p => {
+    completedPayments.forEach(p => {
       if (!p.booking?.property) return;
       const pid   = p.booking.property.property_id;
       const title = p.booking.property.title;
@@ -195,8 +198,10 @@ exports.hostDashboard = async (req, res) => {
       unread_notifications:     unreadNotifications,   // ← NEW
       total_earnings:           parseFloat(totalEarnings.toFixed(2)),
       average_rating:           avgRating,
+      avg_rating:               avgRating,             // alias — HostDashboard.jsx reads this name
       total_reviews:            allReviews.length,
       monthly_earnings_chart:   monthlyEarnings,       // ← NEW
+      monthly_earnings:         monthlyEarningsArray,  // alias (array shape) — HostDashboard.jsx reads this name
       top_performing_property:  topProperty,           // ← NEW
       recent_bookings:          allBookings.slice(0, 5),
       recent_reviews:           recentReviews,         // ← NEW
